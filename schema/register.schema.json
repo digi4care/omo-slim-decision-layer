@@ -1,0 +1,437 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "workspace": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "owner": {
+          "type": "string",
+          "minLength": 1
+        },
+        "change_authority": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "owner",
+        "change_authority"
+      ],
+      "additionalProperties": false
+    },
+    "records": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "schema_version": {
+                "type": "string",
+                "const": "1.0"
+              },
+              "title": {
+                "type": "string",
+                "minLength": 1
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "proposed",
+                  "accepted",
+                  "rejected",
+                  "superseded"
+                ]
+              },
+              "owner": {
+                "type": "string",
+                "minLength": 1
+              },
+              "change_authority": {
+                "type": "string",
+                "minLength": 1
+              },
+              "supersedes": {
+                "default": [],
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "links": {
+                "default": [],
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "enum": [
+                        "refines",
+                        "depends_on",
+                        "constrains",
+                        "relates_to"
+                      ]
+                    },
+                    "target": {
+                      "type": "string"
+                    },
+                    "rationale": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "target",
+                    "rationale"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "type": {
+                "type": "string",
+                "const": "REQ"
+              },
+              "id": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "schema_version",
+              "title",
+              "status",
+              "owner",
+              "change_authority",
+              "supersedes",
+              "links",
+              "type",
+              "id"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "schema_version": {
+                "type": "string",
+                "const": "1.0"
+              },
+              "title": {
+                "type": "string",
+                "minLength": 1
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "proposed",
+                  "accepted",
+                  "rejected",
+                  "superseded"
+                ]
+              },
+              "owner": {
+                "type": "string",
+                "minLength": 1
+              },
+              "change_authority": {
+                "type": "string",
+                "minLength": 1
+              },
+              "supersedes": {
+                "default": [],
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "links": {
+                "default": [],
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "enum": [
+                        "refines",
+                        "depends_on",
+                        "constrains",
+                        "relates_to"
+                      ]
+                    },
+                    "target": {
+                      "type": "string"
+                    },
+                    "rationale": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "target",
+                    "rationale"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "type": {
+                "type": "string",
+                "const": "CONSTRAINT"
+              },
+              "id": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "schema_version",
+              "title",
+              "status",
+              "owner",
+              "change_authority",
+              "supersedes",
+              "links",
+              "type",
+              "id"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "schema_version": {
+                "type": "string",
+                "const": "1.0"
+              },
+              "title": {
+                "type": "string",
+                "minLength": 1
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "proposed",
+                  "accepted",
+                  "rejected",
+                  "superseded"
+                ]
+              },
+              "owner": {
+                "type": "string",
+                "minLength": 1
+              },
+              "change_authority": {
+                "type": "string",
+                "minLength": 1
+              },
+              "supersedes": {
+                "default": [],
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "links": {
+                "default": [],
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "enum": [
+                        "refines",
+                        "depends_on",
+                        "constrains",
+                        "relates_to"
+                      ]
+                    },
+                    "target": {
+                      "type": "string"
+                    },
+                    "rationale": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "target",
+                    "rationale"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "type": {
+                "type": "string",
+                "const": "ASSUMPTION"
+              },
+              "id": {
+                "type": "string"
+              },
+              "needed_to_close": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "schema_version",
+              "title",
+              "status",
+              "owner",
+              "change_authority",
+              "supersedes",
+              "links",
+              "type",
+              "id",
+              "needed_to_close"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "schema_version": {
+                "type": "string",
+                "const": "1.0"
+              },
+              "title": {
+                "type": "string",
+                "minLength": 1
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "proposed",
+                  "accepted",
+                  "rejected",
+                  "superseded"
+                ]
+              },
+              "owner": {
+                "type": "string",
+                "minLength": 1
+              },
+              "change_authority": {
+                "type": "string",
+                "minLength": 1
+              },
+              "supersedes": {
+                "default": [],
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "links": {
+                "default": [],
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "enum": [
+                        "refines",
+                        "depends_on",
+                        "constrains",
+                        "relates_to"
+                      ]
+                    },
+                    "target": {
+                      "type": "string"
+                    },
+                    "rationale": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "target",
+                    "rationale"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "type": {
+                "type": "string",
+                "const": "DEC"
+              },
+              "id": {
+                "type": "string"
+              },
+              "decision": {
+                "type": "string",
+                "minLength": 1
+              },
+              "alternatives_rejected": {
+                "default": [],
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "alternative": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "rejected_because": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "alternative",
+                    "rejected_because"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "consequences": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "schema_version",
+              "title",
+              "status",
+              "owner",
+              "change_authority",
+              "supersedes",
+              "links",
+              "type",
+              "id",
+              "decision",
+              "alternatives_rejected",
+              "consequences"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      }
+    }
+  },
+  "required": [
+    "schema_version",
+    "workspace",
+    "records"
+  ],
+  "additionalProperties": false
+}

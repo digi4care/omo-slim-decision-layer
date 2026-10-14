@@ -1,0 +1,51 @@
+{
+  "name": "decision-layer",
+  "version": "0.1.0",
+  "description": "OMO-slim plugin: git-native decision register (REQ/CONSTRAINT/ASSUMPTION/DEC) for OpenCode",
+  "type": "module",
+  "license": "MIT",
+  "private": true,
+  "author": {
+    "name": "Chris Engelhard",
+    "email": "chris@chrisengelhard.nl",
+    "url": "https://chrisengelhard.nl"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/digi4care/omo-slim-plugin-decision-layer"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "bun build src/index.ts --outdir dist --target node --format esm --external @opencode-ai/plugin --external zod --external js-yaml",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome lint .",
+    "format": "biome format . --write",
+    "check": "biome check .",
+    "release": "bun run build && mkdir -p release && npm pack --pack-destination release"
+  },
+  "dependencies": {
+    "js-yaml": "^4.1.0",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.14",
+    "@opencode-ai/plugin": "1.18.32",
+    "@types/js-yaml": "^4.0.9",
+    "bun-types": "^1.4.2",
+    "typescript": "^5.9.3"
+  },
+  "peerDependencies": {
+    "@opencode-ai/plugin": ">=1.18.0"
+  }
+}
