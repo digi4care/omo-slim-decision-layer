@@ -4,3 +4,6 @@ dist/
 
 # release artifacts stay local, never committed
 release/
+
+# docs are local only, never committed or published
+docs/

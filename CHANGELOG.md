@@ -6,6 +6,16 @@ gets a version number and a `.tgz` in `release/`.
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-14
+
+### Breaking
+
+- Record schemas are now strict: unknown top-level fields are REJECTED with an
+  `unrecognized_keys` error instead of being silently stripped (R2: no silent
+  data loss). Legacy extras must be moved to `meta` explicitly. Registers
+  written against 0.3.0 that carry undeclared top-level keys will now fail
+  validation instead of loading with those keys dropped.
+
 ### Added
 
 - Optional `context` free-text field on all record types (R1: a decision
@@ -19,9 +29,6 @@ gets a version number and a `.tgz` in `release/`.
 
 ### Changed
 
-- Record schemas are now strict: unknown top-level fields are REJECTED with an
-  `unrecognized_keys` error instead of being silently stripped (R2: no silent
-  data loss). Legacy extras must be moved to `meta` explicitly.
 - Verified after the change against the directus-headless brownfield dogfood:
   104 converted records now preserve 100% of links (was 37%) and all ADR
   context (was 0%), v1 `server` and v2 `setup` paths both green, 102 tests.
@@ -37,8 +44,6 @@ gets a version number and a `.tgz` in `release/`.
   captured from `ctx.location.directory` because v2 tool contexts do not expose
   `worktree`/`directory`.
 - `@opencode/plugin` 2.0.29 added as a devDependency for typechecking.
-
-## [0.2.2] - 2026-10-14
 
 ## [0.2.2] - 2026-10-14
 
