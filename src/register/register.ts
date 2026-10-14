@@ -69,6 +69,8 @@ const RecordKeyOrder: Record<string, number> = {
   decision: 11,
   alternatives_rejected: 12,
   consequences: 13,
+  context: 14,
+  meta: 15,
 };
 
 const LinkKeyOrder: Record<string, number> = {
@@ -96,6 +98,7 @@ function validateLinkIntegrity(register: Register): string | undefined {
   const ids = new Set(register.records.map((r) => r.id));
   for (const record of register.records) {
     for (const link of record.links) {
+      if (link.type === 'external') continue; // external targets live outside the register
       if (!ids.has(link.target)) {
         return `Record ${record.id} links to non-existent target ${link.target}`;
       }
@@ -130,6 +133,12 @@ function normalizeRecord(record: DecisionRecord): Record<string, unknown> {
   // Never serialize absent optional fields (would dump as `null`).
   if (base.status_reason === undefined) {
     delete base.status_reason;
+  }
+  if (base.context === undefined) {
+    delete base.context;
+  }
+  if (base.meta === undefined) {
+    delete base.meta;
   }
   if (Array.isArray(base.links)) {
     base.links = base.links.map((link) =>
@@ -237,6 +246,13 @@ export function initRegister(filePath: string, workspace: Workspace): void {
   writeRegister(filePath, register);
 }
 
+function withExtras<T extends Record<string, unknown>>(base: T, input: AddRecordInput): T {
+  const extras = base as Record<string, unknown>;
+  if (input.context !== undefined) extras.context = input.context;
+  if (input.meta !== undefined) extras.meta = input.meta;
+  return base;
+}
+
 export function addRecord(filePath: string, input: AddRecordInput): DecisionRecord {
   if (!fs.existsSync(filePath)) {
     throw new Error(
@@ -248,17 +264,20 @@ export function addRecord(filePath: string, input: AddRecordInput): DecisionReco
   const owner = input.owner ?? register.workspace.owner;
   const change_authority = input.change_authority ?? register.workspace.change_authority;
 
-  const base = {
-    schema_version: '1.0' as const,
-    id,
-    type: input.type,
-    title: input.title,
-    status: 'proposed' as const,
-    owner,
-    change_authority,
-    supersedes: input.supersedes ?? [],
-    links: input.links ?? [],
-  };
+  const base = withExtras(
+    {
+      schema_version: '1.0' as const,
+      id,
+      type: input.type,
+      title: input.title,
+      status: 'proposed' as const,
+      owner,
+      change_authority,
+      supersedes: input.supersedes ?? [],
+      links: input.links ?? [],
+    },
+    input,
+  );
 
   let record: DecisionRecord;
   switch (input.type) {
@@ -340,17 +359,20 @@ export function supersedeRecord(
   const owner = newRecordInput.owner ?? register.workspace.owner;
   const change_authority = newRecordInput.change_authority ?? register.workspace.change_authority;
 
-  const base = {
-    schema_version: '1.0' as const,
-    id: newId,
-    type: newRecordInput.type,
-    title: newRecordInput.title,
-    status: 'proposed' as const,
-    owner,
-    change_authority,
-    supersedes: [oldId],
-    links: newRecordInput.links ?? [],
-  };
+  const base = withExtras(
+    {
+      schema_version: '1.0' as const,
+      id: newId,
+      type: newRecordInput.type,
+      title: newRecordInput.title,
+      status: 'proposed' as const,
+      owner,
+      change_authority,
+      supersedes: [oldId],
+      links: newRecordInput.links ?? [],
+    },
+    newRecordInput,
+  );
 
   let newRecord: DecisionRecord;
   switch (newRecordInput.type) {

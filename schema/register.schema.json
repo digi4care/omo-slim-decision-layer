@@ -26,7 +26,12 @@
           "minLength": 1
         }
       },
-      "required": ["id", "title", "owner", "change_authority"],
+      "required": [
+        "id",
+        "title",
+        "owner",
+        "change_authority"
+      ],
       "additionalProperties": false
     },
     "records": {
@@ -46,7 +51,12 @@
               },
               "status": {
                 "type": "string",
-                "enum": ["proposed", "accepted", "rejected", "superseded"]
+                "enum": [
+                  "proposed",
+                  "accepted",
+                  "rejected",
+                  "superseded"
+                ]
               },
               "owner": {
                 "type": "string",
@@ -74,19 +84,43 @@
                   "properties": {
                     "type": {
                       "type": "string",
-                      "enum": ["refines", "depends_on", "constrains", "relates_to"]
+                      "enum": [
+                        "refines",
+                        "depends_on",
+                        "constrains",
+                        "relates_to",
+                        "decides",
+                        "implements",
+                        "satisfies",
+                        "external"
+                      ]
                     },
                     "target": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     },
                     "rationale": {
                       "type": "string",
                       "minLength": 1
                     }
                   },
-                  "required": ["type", "target", "rationale"],
+                  "required": [
+                    "type",
+                    "target",
+                    "rationale"
+                  ],
                   "additionalProperties": false
                 }
+              },
+              "context": {
+                "type": "string"
+              },
+              "meta": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {}
               },
               "type": {
                 "type": "string",
@@ -122,7 +156,12 @@
               },
               "status": {
                 "type": "string",
-                "enum": ["proposed", "accepted", "rejected", "superseded"]
+                "enum": [
+                  "proposed",
+                  "accepted",
+                  "rejected",
+                  "superseded"
+                ]
               },
               "owner": {
                 "type": "string",
@@ -150,19 +189,43 @@
                   "properties": {
                     "type": {
                       "type": "string",
-                      "enum": ["refines", "depends_on", "constrains", "relates_to"]
+                      "enum": [
+                        "refines",
+                        "depends_on",
+                        "constrains",
+                        "relates_to",
+                        "decides",
+                        "implements",
+                        "satisfies",
+                        "external"
+                      ]
                     },
                     "target": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     },
                     "rationale": {
                       "type": "string",
                       "minLength": 1
                     }
                   },
-                  "required": ["type", "target", "rationale"],
+                  "required": [
+                    "type",
+                    "target",
+                    "rationale"
+                  ],
                   "additionalProperties": false
                 }
+              },
+              "context": {
+                "type": "string"
+              },
+              "meta": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {}
               },
               "type": {
                 "type": "string",
@@ -198,7 +261,12 @@
               },
               "status": {
                 "type": "string",
-                "enum": ["proposed", "accepted", "rejected", "superseded"]
+                "enum": [
+                  "proposed",
+                  "accepted",
+                  "rejected",
+                  "superseded"
+                ]
               },
               "owner": {
                 "type": "string",
@@ -226,19 +294,43 @@
                   "properties": {
                     "type": {
                       "type": "string",
-                      "enum": ["refines", "depends_on", "constrains", "relates_to"]
+                      "enum": [
+                        "refines",
+                        "depends_on",
+                        "constrains",
+                        "relates_to",
+                        "decides",
+                        "implements",
+                        "satisfies",
+                        "external"
+                      ]
                     },
                     "target": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     },
                     "rationale": {
                       "type": "string",
                       "minLength": 1
                     }
                   },
-                  "required": ["type", "target", "rationale"],
+                  "required": [
+                    "type",
+                    "target",
+                    "rationale"
+                  ],
                   "additionalProperties": false
                 }
+              },
+              "context": {
+                "type": "string"
+              },
+              "meta": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {}
               },
               "type": {
                 "type": "string",
@@ -279,7 +371,12 @@
               },
               "status": {
                 "type": "string",
-                "enum": ["proposed", "accepted", "rejected", "superseded"]
+                "enum": [
+                  "proposed",
+                  "accepted",
+                  "rejected",
+                  "superseded"
+                ]
               },
               "owner": {
                 "type": "string",
@@ -307,19 +404,43 @@
                   "properties": {
                     "type": {
                       "type": "string",
-                      "enum": ["refines", "depends_on", "constrains", "relates_to"]
+                      "enum": [
+                        "refines",
+                        "depends_on",
+                        "constrains",
+                        "relates_to",
+                        "decides",
+                        "implements",
+                        "satisfies",
+                        "external"
+                      ]
                     },
                     "target": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     },
                     "rationale": {
                       "type": "string",
                       "minLength": 1
                     }
                   },
-                  "required": ["type", "target", "rationale"],
+                  "required": [
+                    "type",
+                    "target",
+                    "rationale"
+                  ],
                   "additionalProperties": false
                 }
+              },
+              "context": {
+                "type": "string"
+              },
+              "meta": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {}
               },
               "type": {
                 "type": "string",
@@ -347,7 +468,10 @@
                       "minLength": 1
                     }
                   },
-                  "required": ["alternative", "rejected_because"],
+                  "required": [
+                    "alternative",
+                    "rejected_because"
+                  ],
                   "additionalProperties": false
                 }
               },
@@ -376,6 +500,10 @@
       }
     }
   },
-  "required": ["schema_version", "workspace", "records"],
+  "required": [
+    "schema_version",
+    "workspace",
+    "records"
+  ],
   "additionalProperties": false
 }

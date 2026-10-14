@@ -88,6 +88,9 @@ function generateMarkdownView(register: Register): string {
     if (record.status_reason !== undefined) {
       lines.push(`- Status reason: ${record.status_reason}`);
     }
+    if (record.context !== undefined) {
+      lines.push(`- Context: ${record.context}`);
+    }
     if (record.links.length > 0) {
       lines.push('- Links:');
       for (const link of record.links) {

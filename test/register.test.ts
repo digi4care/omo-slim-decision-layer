@@ -244,4 +244,88 @@ describe('register', () => {
     const after = fs.readFileSync(registerPath, 'utf-8');
     expect(after).toBe(before);
   });
+
+  test('context and meta are preserved on add and supersede (R1)', () => {
+    const record = addRecord(
+      registerPath,
+      makeInput('REQ', {
+        context: 'the why behind this requirement',
+        meta: { principles: ['data-ownership'], legacy_id: 'FR-0007' },
+      }),
+    );
+    expect(record.context).toBe('the why behind this requirement');
+    expect(record.meta?.legacy_id).toBe('FR-0007');
+    const reread = readRegister(registerPath);
+    expect(reread.records[0].context).toBe('the why behind this requirement');
+    const fileText = fs.readFileSync(registerPath, 'utf-8');
+    expect(fileText).not.toContain('context: null');
+  });
+
+  test('unknown top-level fields are rejected, never silently stripped (R2)', () => {
+    const register = readRegister(registerPath);
+    register.records.push({
+      schema_version: '1.0',
+      id: 'REQ-0001',
+      type: 'REQ',
+      title: 'bad record',
+      status: 'proposed',
+      owner: 'x',
+      change_authority: 'x',
+      supersedes: [],
+      links: [],
+      totally_unknown_field: 'must not survive',
+    } as never);
+    expect(() => writeRegister(registerPath, register)).toThrow(/totally_unknown_field/);
+  });
+
+  test('external links accept free-form targets and skip integrity (R4)', () => {
+    const record = addRecord(
+      registerPath,
+      makeInput('REQ', {
+        links: [
+          {
+            type: 'external',
+            target: 'directus-headless-3qx',
+            rationale: 'beads issue reference',
+          },
+        ],
+      }),
+    );
+    expect(record.links[0].target).toBe('directus-headless-3qx');
+    const reread = readRegister(registerPath);
+    expect(reread.records[0].links[0].type).toBe('external');
+  });
+
+  test('decides/implements/satisfies relations are accepted (R5)', () => {
+    addRecord(registerPath, makeInput('REQ'));
+    const record = addRecord(
+      registerPath,
+      makeInput('DEC', {
+        links: [
+          { type: 'decides', target: 'REQ-0001', rationale: 'decides the requirement' },
+          { type: 'implements', target: 'REQ-0001', rationale: 'implements it' },
+          { type: 'satisfies', target: 'REQ-0001', rationale: 'satisfies it' },
+        ],
+      }),
+    );
+    expect(record.links).toHaveLength(3);
+    expect(() => readRegister(registerPath)).not.toThrow();
+  });
+
+  test('non-external links to foreign id formats still fail (R4 boundary)', () => {
+    expect(() =>
+      addRecord(
+        registerPath,
+        makeInput('REQ', {
+          links: [
+            {
+              type: 'relates_to',
+              target: 'directus-headless-3qx',
+              rationale: 'external id via internal link type',
+            },
+          ],
+        }),
+      ),
+    ).toThrow();
+  });
 });

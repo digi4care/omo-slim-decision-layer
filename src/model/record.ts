@@ -6,7 +6,16 @@ export type RecordType = (typeof RecordTypes)[number];
 export const RecordStatuses = ['proposed', 'accepted', 'rejected', 'superseded'] as const;
 export type RecordStatus = (typeof RecordStatuses)[number];
 
-export const LinkRelations = ['refines', 'depends_on', 'constrains', 'relates_to'] as const;
+export const LinkRelations = [
+  'refines',
+  'depends_on',
+  'constrains',
+  'relates_to',
+  'decides',
+  'implements',
+  'satisfies',
+  'external',
+] as const;
 export type LinkRelation = (typeof LinkRelations)[number];
 
 const TypeOrder: Record<RecordType, number> = {
@@ -39,11 +48,25 @@ export const RecordId = z.string().superRefine((val, ctx) => {
 
 export type RecordId = z.infer<typeof RecordId>;
 
-export const LinkSchema = z.object({
-  type: z.enum(LinkRelations),
-  target: RecordId,
-  rationale: z.string().min(1, 'Link rationale is required'),
-});
+export const LinkSchema = z
+  .object({
+    type: z.enum(LinkRelations),
+    target: z.string().min(1, 'Link target is required'),
+    rationale: z.string().min(1, 'Link rationale is required'),
+  })
+  .superRefine((link, ctx) => {
+    // External links (beads issues, URLs, legacy ids) are free-form; internal
+    // links must reference a register id (TYPE-NNNN).
+    if (link.type === 'external') return;
+    const parsed = RecordId.safeParse(link.target);
+    if (!parsed.success) {
+      ctx.addIssue({
+        code: 'custom',
+        message: parsed.error.issues.map((issue) => issue.message).join('; '),
+        path: ['target'],
+      });
+    }
+  });
 
 export type Link = z.infer<typeof LinkSchema>;
 
@@ -56,40 +79,53 @@ const BaseRecordFields = {
   supersedes: z.array(RecordId).default([]),
   status_reason: z.string().optional(),
   links: z.array(LinkSchema).default([]),
+  // Optional free text: the "why"-narrative behind a record (R1). Without it a
+  // decision register degrades to a card index.
+  context: z.string().optional(),
+  // Optional free-form bag for data preserved from other systems (brownfield
+  // imports). Unknown top-level keys are REJECTED instead (R2: no silent data
+  // loss), so legacy extras must be moved here explicitly by the importer.
+  meta: z.record(z.string(), z.unknown()).optional(),
 };
 
 function createRecordSchema<T extends RecordType>(type: T) {
-  return z.object({
-    ...BaseRecordFields,
-    type: z.literal(type),
-    id: RecordId.superRefine((val, ctx) => {
-      if (!val.startsWith(`${type}-`)) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: `Id must start with ${type}- for a ${type} record`,
-        });
-      }
-    }),
-  });
+  return z
+    .object({
+      ...BaseRecordFields,
+      type: z.literal(type),
+      id: RecordId.superRefine((val, ctx) => {
+        if (!val.startsWith(`${type}-`)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `Id must start with ${type}- for a ${type} record`,
+          });
+        }
+      }),
+    })
+    .strict();
 }
 
 export const ReqRecordSchema = createRecordSchema('REQ');
 export const ConstraintRecordSchema = createRecordSchema('CONSTRAINT');
-export const AssumptionRecordSchema = createRecordSchema('ASSUMPTION').extend({
-  needed_to_close: z.string().min(1, 'needed_to_close is required'),
-});
-export const DecRecordSchema = createRecordSchema('DEC').extend({
-  decision: z.string().min(1, 'Decision is required'),
-  alternatives_rejected: z
-    .array(
-      z.object({
-        alternative: z.string().min(1, 'Alternative is required'),
-        rejected_because: z.string().min(1, 'Rejection reason is required'),
-      }),
-    )
-    .default([]),
-  consequences: z.string().min(1, 'Consequences are required'),
-});
+export const AssumptionRecordSchema = createRecordSchema('ASSUMPTION')
+  .extend({
+    needed_to_close: z.string().min(1, 'needed_to_close is required'),
+  })
+  .strict();
+export const DecRecordSchema = createRecordSchema('DEC')
+  .extend({
+    decision: z.string().min(1, 'Decision is required'),
+    alternatives_rejected: z
+      .array(
+        z.object({
+          alternative: z.string().min(1, 'Alternative is required'),
+          rejected_because: z.string().min(1, 'Rejection reason is required'),
+        }),
+      )
+      .default([]),
+    consequences: z.string().min(1, 'Consequences are required'),
+  })
+  .strict();
 
 export const RecordSchema = z.discriminatedUnion('type', [
   ReqRecordSchema,
@@ -110,30 +146,36 @@ const BaseAddInputFields = {
   change_authority: z.string().optional(),
   supersedes: z.array(RecordId).optional(),
   links: z.array(LinkSchema).optional(),
+  context: z.string().optional(),
+  meta: z.record(z.string(), z.unknown()).optional(),
 };
 
 export const AddRecordInputSchema = z.discriminatedUnion('type', [
-  z.object({ ...BaseAddInputFields, type: z.literal('REQ') }),
-  z.object({ ...BaseAddInputFields, type: z.literal('CONSTRAINT') }),
-  z.object({
-    ...BaseAddInputFields,
-    type: z.literal('ASSUMPTION'),
-    needed_to_close: z.string().min(1, 'needed_to_close is required'),
-  }),
-  z.object({
-    ...BaseAddInputFields,
-    type: z.literal('DEC'),
-    decision: z.string().min(1, 'Decision is required'),
-    alternatives_rejected: z
-      .array(
-        z.object({
-          alternative: z.string().min(1, 'Alternative is required'),
-          rejected_because: z.string().min(1, 'Rejection reason is required'),
-        }),
-      )
-      .optional(),
-    consequences: z.string().min(1, 'Consequences are required'),
-  }),
+  z.object({ ...BaseAddInputFields, type: z.literal('REQ') }).strict(),
+  z.object({ ...BaseAddInputFields, type: z.literal('CONSTRAINT') }).strict(),
+  z
+    .object({
+      ...BaseAddInputFields,
+      type: z.literal('ASSUMPTION'),
+      needed_to_close: z.string().min(1, 'needed_to_close is required'),
+    })
+    .strict(),
+  z
+    .object({
+      ...BaseAddInputFields,
+      type: z.literal('DEC'),
+      decision: z.string().min(1, 'Decision is required'),
+      alternatives_rejected: z
+        .array(
+          z.object({
+            alternative: z.string().min(1, 'Alternative is required'),
+            rejected_because: z.string().min(1, 'Rejection reason is required'),
+          }),
+        )
+        .optional(),
+      consequences: z.string().min(1, 'Consequences are required'),
+    })
+    .strict(),
 ]);
 
 export type AddRecordInput = z.infer<typeof AddRecordInputSchema>;

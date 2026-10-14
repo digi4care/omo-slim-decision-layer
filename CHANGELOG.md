@@ -4,6 +4,28 @@ All notable changes to `@digi4care/omo-slim-decision-layer` are documented here.
 The project follows [semver](https://semver.org): every release, however small,
 gets a version number and a `.tgz` in `release/`.
 
+## [Unreleased]
+
+### Added
+
+- Optional `context` free-text field on all record types (R1: a decision
+  register needs its "why"-narrative, not just title + links), also rendered in
+  the markdown view. Optional `meta` free-form bag for explicitly preserved
+  legacy/import data.
+- New link relation types `decides`, `implements`, `satisfies` (R5) and
+  `external` (R4): external links take free-form targets (beads issues, URLs,
+  legacy ids) and are exempt from referential-integrity checks; internal link
+  types still require `TYPE-NNNN` register ids.
+
+### Changed
+
+- Record schemas are now strict: unknown top-level fields are REJECTED with an
+  `unrecognized_keys` error instead of being silently stripped (R2: no silent
+  data loss). Legacy extras must be moved to `meta` explicitly.
+- Verified after the change against the directus-headless brownfield dogfood:
+  104 converted records now preserve 100% of links (was 37%) and all ADR
+  context (was 0%), v1 `server` and v2 `setup` paths both green, 102 tests.
+
 ## [0.3.0] - 2026-10-14
 
 ### Added
