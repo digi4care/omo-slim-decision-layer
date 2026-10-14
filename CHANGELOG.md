@@ -4,6 +4,20 @@ All notable changes to `@digi4care/omo-slim-decision-layer` are documented here.
 The project follows [semver](https://semver.org): every release, however small,
 gets a version number and a `.tgz` in `release/`.
 
+## [0.3.0] - 2026-10-14
+
+### Added
+
+- **v2 compatibility.** The default export now also provides a v2 `setup`
+  (next to the existing v1 `server`), following oh-my-opencode-slim's pattern.
+  The nine tools are registered via `ctx.tool.transform` and the interview
+  prompt is injected via `ctx.session.hook('prompt')`. The project root is
+  captured from `ctx.location.directory` because v2 tool contexts do not expose
+  `worktree`/`directory`.
+- `@opencode/plugin` 2.0.29 added as a devDependency for typechecking.
+
+## [0.2.2] - 2026-10-14
+
 ## [0.2.2] - 2026-10-14
 
 ### Changed

@@ -1,6 +1,6 @@
 {
   "name": "@digi4care/omo-slim-decision-layer",
-  "version": "0.2.3",
+  "version": "0.3.0",
   "description": "Git-native decision register for OpenCode: typed records (REQ/CONSTRAINT/ASSUMPTION/DEC), owner ratification and traceability, as a companion plugin for oh-my-opencode-slim",
   "type": "module",
   "license": "MIT",
@@ -64,6 +64,7 @@
   "devDependencies": {
     "@biomejs/biome": "2.5.15",
     "@opencode-ai/plugin": "1.18.35",
+    "@opencode/plugin": "^2.0.29",
     "bun-types": "^1.4.2",
     "typescript": "^7.0.2"
   },

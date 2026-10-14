@@ -27,6 +27,16 @@ Built as a companion plugin for
 - **Traceability** — typed links (`refines`, `depends_on`, `constrains`,
   `relates_to`) between records, with queries for orphans and reverse lookup.
 
+## Compatibility
+
+One package, two registration paths, sharing the same register and tool logic:
+
+- **v1** (`@opencode-ai/plugin` 1.x): the default export provides a v1 `server`
+  that registers the nine tools and the `command.execute.before` hook.
+- **v2** (`@opencode/plugin` 2.x): the same default export also provides a v2
+  `setup` that registers the tools via `ctx.tool.transform` and injects the
+  prompt via `ctx.session.hook('prompt')`.
+
 ## Agent tools
 
 | Tool | Purpose |

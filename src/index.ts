@@ -1,6 +1,7 @@
-import type { Hooks, Plugin, PluginModule } from '@opencode-ai/plugin';
+import type { Hooks, Plugin } from '@opencode-ai/plugin';
 import { createInterviewInjectHook } from './hooks/interview-inject';
 import { createDecisionTools } from './tools/index';
+import { createV2Setup } from './v2/setup';
 
 const DecisionLayer: Plugin = async () => {
   const hooks: Hooks = {
@@ -10,7 +11,10 @@ const DecisionLayer: Plugin = async () => {
   return hooks;
 };
 
-export default {
+const pluginModule = {
   id: 'omo-slim-decision-layer',
   server: DecisionLayer,
-} satisfies PluginModule;
+  setup: createV2Setup(),
+};
+
+export default pluginModule;
