@@ -9,6 +9,7 @@
     "forceConsistentCasingInFileNames": true,
     "declaration": true,
     "emitDeclarationOnly": false,
+    "rootDir": "src",
     "outDir": "dist",
     "types": ["bun-types"]
   },

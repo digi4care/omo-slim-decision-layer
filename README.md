@@ -1,4 +1,4 @@
-# omo-slim-plugin-decision-layer
+# omo-slim-decision-layer
 
 An [OpenCode](https://opencode.ai) plugin that adds a **decision layer** to
 AI-assisted development: a typed, git-native decision register that records the
@@ -31,6 +31,7 @@ Built as a companion plugin for
 
 | Tool | Purpose |
 |---|---|
+| `decision-init` | Create the register (idempotent, never overwrites) |
 | `decision-add` | Create a record (status `proposed`) |
 | `decision-ratify` | `proposed` → `accepted` — owner act, never self-invoked |
 | `decision-reject` | `proposed` → `rejected` |
@@ -42,20 +43,38 @@ Built as a companion plugin for
 
 ## Install
 
-Releases are plain `.tgz` tarballs in the `release/` folder, versioned with
-semver. No npm publish.
-
-```bash
-npm install ./release/decision-layer-<version>.tgz
-```
-
-Then add the plugin to your OpenCode config:
+Add the plugin to your OpenCode config:
 
 ```jsonc
 {
-  "plugin": ["decision-layer"]
+  "plugin": ["@digi4care/omo-slim-decision-layer@latest"]
 }
 ```
+
+OpenCode installs the plugin automatically from npm on the next start. To pin
+a version, replace `@latest` with a specific version (e.g. `@0.2.1`).
+
+**Local development / offline use.** Every release is also packed as a plain
+`.tgz` in the `release/` folder (semver). A named entry only works for packages
+that exist on npm; for a local or private build, reference the built file
+directly instead:
+
+```jsonc
+{
+  "plugin": ["file:///absolute/path/to/node_modules/@digi4care/omo-slim-decision-layer/dist/index.js"]
+}
+```
+
+`dist/index.js` is a single bundle; only `@opencode-ai/plugin` and `zod` are
+external, so the host supplies those.
+
+**If you use `min-release-age` in your npm config:** OpenCode's own installer
+enforces it too. A freshly published version cannot be installed by OpenCode
+until it is older than that many days. `min-release-age-exclude` helps for
+direct `npm install` calls but **not** for OpenCode's bundled installer
+(observed on OpenCode 1.18.35). Until the window passes, use the `file://`
+form above, or install into the OpenCode package cache yourself
+(`bun add <pkg>` in `~/.cache/opencode/packages/<pkg>@latest`).
 
 ## Development
 

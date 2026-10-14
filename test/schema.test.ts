@@ -2,7 +2,7 @@ import { beforeAll, describe, expect, test } from 'bun:test';
 import fs from 'node:fs';
 import { createRequire } from 'node:module';
 import path from 'node:path';
-import yaml from 'js-yaml';
+import { load } from 'js-yaml';
 
 const require = createRequire(import.meta.url);
 const { validate } = require('json-schema') as {
@@ -72,9 +72,22 @@ describe('generated JSON Schema', () => {
 
   test('validates the §9.1 example register', () => {
     const schema = JSON.parse(fs.readFileSync(schemaPath, 'utf-8'));
-    const instance = yaml.load(exampleYaml);
+    const instance = load(exampleYaml);
     const result = validate(instance, schema);
     expect(result.valid).toBe(true);
     expect(result.errors).toHaveLength(0);
+  });
+
+  test('every record variant declares optional status_reason', () => {
+    const schema = JSON.parse(fs.readFileSync(schemaPath, 'utf-8'));
+    const variants = schema.properties.records.items.oneOf as {
+      properties: Record<string, { type: string }>;
+      required: string[];
+    }[];
+    expect(variants.length).toBeGreaterThan(0);
+    for (const variant of variants) {
+      expect(variant.properties.status_reason).toEqual({ type: 'string' });
+      expect(variant.required).not.toContain('status_reason');
+    }
   });
 });

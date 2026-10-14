@@ -1,9 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import type { ToolContext, tool } from '@opencode-ai/plugin';
-import yaml from 'js-yaml';
+import { load } from 'js-yaml';
 import { z } from 'zod';
-import { loadConfig } from '../config.js';
 import {
   type AddRecordInput,
   AddRecordInputSchema,
@@ -13,6 +12,7 @@ import {
 } from '../model/record.js';
 import {
   addRecord,
+  initRegister,
   type Register,
   ratifyRecord,
   readRegister,
@@ -20,36 +20,18 @@ import {
   supersedeRecord,
   validateRegisterFile,
 } from '../register/register.js';
+import {
+  resolveProjectRoot,
+  resolveRegisterPath,
+  resolveToolPath,
+  withinWorktree,
+} from './paths.js';
 
 // OpenCode's tool registry has historically accepted dashed names. If a future
 // version rejects dashes at registration time, fall back to underscores here
 // (e.g. 'decision_add') and update the skill prompt references accordingly.
 
 type ToolDefinition = ReturnType<typeof tool>;
-
-function withinWorktree(worktree: string, target: string): boolean {
-  const resolvedWorktree = path.resolve(worktree);
-  const resolvedTarget = path.resolve(target);
-  const relative = path.relative(resolvedWorktree, resolvedTarget);
-  return !relative.startsWith('..') && !path.isAbsolute(relative);
-}
-
-function resolveRegisterPath(worktree: string): string {
-  const config = loadConfig(worktree);
-  const registerPath = path.resolve(worktree, config.registerPath);
-  if (!withinWorktree(worktree, registerPath)) {
-    throw new Error(`Configured register path escapes worktree: ${config.registerPath}`);
-  }
-  return registerPath;
-}
-
-function resolveToolPath(worktree: string, filePath: string): string {
-  const resolved = path.resolve(worktree, filePath);
-  if (!withinWorktree(worktree, resolved)) {
-    throw new Error(`Path escapes worktree: ${filePath}`);
-  }
-  return resolved;
-}
 
 function readBodyFile(filePath: string): Record<string, unknown> {
   if (!fs.existsSync(filePath)) {
@@ -58,7 +40,7 @@ function readBodyFile(filePath: string): Record<string, unknown> {
   const content = fs.readFileSync(filePath, 'utf-8');
   const trimmed = content.trim();
   if (!trimmed) return {};
-  const parsed = yaml.load(content);
+  const parsed = load(content);
   if (parsed === null || parsed === undefined) return {};
   if (typeof parsed !== 'object' || Array.isArray(parsed)) {
     throw new Error(`Body file must contain a YAML object: ${filePath}`);
@@ -102,6 +84,9 @@ function generateMarkdownView(register: Register): string {
     lines.push(`- Change authority: ${record.change_authority}`);
     if (record.supersedes.length > 0) {
       lines.push(`- Supersedes: ${record.supersedes.join(', ')}`);
+    }
+    if (record.status_reason !== undefined) {
+      lines.push(`- Status reason: ${record.status_reason}`);
     }
     if (record.links.length > 0) {
       lines.push('- Links:');
@@ -150,10 +135,9 @@ export function createDecisionTools(): Record<string, ToolDefinition> {
         body: z.string().optional().describe('Path to YAML file with additional record fields'),
       },
       async (args, ctx) => {
-        const registerPath = resolveRegisterPath(ctx.worktree);
-        const body = args.body
-          ? readBodyFile(resolveToolPath(ctx.worktree, args.body as string))
-          : {};
+        const root = resolveProjectRoot(ctx);
+        const registerPath = resolveRegisterPath(root);
+        const body = args.body ? readBodyFile(resolveToolPath(root, args.body as string)) : {};
         const input = parseRecordInput(
           { type: args.type as string, title: args.title as string },
           body,
@@ -169,7 +153,8 @@ export function createDecisionTools(): Record<string, ToolDefinition> {
         id: z.string(),
       },
       async (args, ctx) => {
-        const registerPath = resolveRegisterPath(ctx.worktree);
+        const root = resolveProjectRoot(ctx);
+        const registerPath = resolveRegisterPath(root);
         const before = readRegister(registerPath).records.find((r) => r.id === args.id);
         if (before && before.status === 'accepted') {
           return `Record ${args.id} is already accepted (no-op)`;
@@ -186,12 +171,13 @@ export function createDecisionTools(): Record<string, ToolDefinition> {
         reason: z.string().min(1),
       },
       async (args, ctx) => {
-        const registerPath = resolveRegisterPath(ctx.worktree);
+        const root = resolveProjectRoot(ctx);
+        const registerPath = resolveRegisterPath(root);
         const before = readRegister(registerPath).records.find((r) => r.id === args.id);
         if (before && before.status === 'rejected') {
           return `Record ${args.id} is already rejected (no-op)`;
         }
-        const record = rejectRecord(registerPath, args.id as string);
+        const record = rejectRecord(registerPath, args.id as string, args.reason as string);
         return `Rejected ${record.id}: ${args.reason}`;
       },
     ),
@@ -201,12 +187,22 @@ export function createDecisionTools(): Record<string, ToolDefinition> {
       {
         id: z.string(),
         by: z.string().describe('Path to YAML file describing the new record'),
+        reason: z
+          .string()
+          .optional()
+          .describe('Reason stored as status_reason on the superseded record'),
       },
       async (args, ctx) => {
-        const registerPath = resolveRegisterPath(ctx.worktree);
-        const body = readBodyFile(resolveToolPath(ctx.worktree, args.by as string));
+        const root = resolveProjectRoot(ctx);
+        const registerPath = resolveRegisterPath(root);
+        const body = readBodyFile(resolveToolPath(root, args.by as string));
         const input = parseRecordInput({}, body);
-        const record = supersedeRecord(registerPath, args.id as string, input);
+        const record = supersedeRecord(
+          registerPath,
+          args.id as string,
+          input,
+          args.reason as string | undefined,
+        );
         return `Superseded ${args.id} with ${record.id}`;
       },
     ),
@@ -218,7 +214,8 @@ export function createDecisionTools(): Record<string, ToolDefinition> {
         type: z.enum(RecordTypes).optional(),
       },
       async (args, ctx) => {
-        const registerPath = resolveRegisterPath(ctx.worktree);
+        const root = resolveProjectRoot(ctx);
+        const registerPath = resolveRegisterPath(root);
         const register = readRegister(registerPath);
         let records = register.records;
         if (args.status) records = records.filter((r) => r.status === args.status);
@@ -237,7 +234,8 @@ export function createDecisionTools(): Record<string, ToolDefinition> {
         for: z.string().optional(),
       },
       async (args, ctx) => {
-        const registerPath = resolveRegisterPath(ctx.worktree);
+        const root = resolveProjectRoot(ctx);
+        const registerPath = resolveRegisterPath(root);
         const register = readRegister(registerPath);
 
         if (args.orphan) {
@@ -284,7 +282,8 @@ export function createDecisionTools(): Record<string, ToolDefinition> {
       'Validate the register file against the schema',
       {},
       async (_args, ctx) => {
-        const registerPath = resolveRegisterPath(ctx.worktree);
+        const root = resolveProjectRoot(ctx);
+        const registerPath = resolveRegisterPath(root);
         try {
           validateRegisterFile(registerPath);
           return `Register is valid: ${registerPath}`;
@@ -298,16 +297,42 @@ export function createDecisionTools(): Record<string, ToolDefinition> {
       'Generate a markdown view of the register',
       {},
       async (_args, ctx) => {
-        const registerPath = resolveRegisterPath(ctx.worktree);
+        const root = resolveProjectRoot(ctx);
+        const registerPath = resolveRegisterPath(root);
         const register = readRegister(registerPath);
-        const viewPath = path.resolve(ctx.worktree, '.decisions', 'views', 'register.md');
-        if (!withinWorktree(ctx.worktree, viewPath)) {
+        const viewPath = path.resolve(root, '.decisions', 'views', 'register.md');
+        if (!withinWorktree(root, viewPath)) {
           throw new Error('View path escapes worktree');
         }
         fs.mkdirSync(path.dirname(viewPath), { recursive: true });
         const markdown = generateMarkdownView(register);
         fs.writeFileSync(viewPath, markdown, 'utf-8');
         return `View written to ${viewPath}`;
+      },
+    ),
+
+    'decision-init': makeTool(
+      'Create an empty decision register at .decisions/register.yaml (refuses to overwrite)',
+      {
+        id: z.string().min(1).describe('Workspace slug'),
+        title: z.string().min(1),
+        owner: z.string().min(1),
+        change_authority: z.string().min(1),
+      },
+      async (args, ctx) => {
+        const root = resolveProjectRoot(ctx);
+        const registerPath = resolveRegisterPath(root);
+        if (fs.existsSync(registerPath)) {
+          return `Register already exists at ${registerPath}; not overwriting.`;
+        }
+        initRegister(registerPath, {
+          id: args.id as string,
+          title: args.title as string,
+          owner: args.owner as string,
+          change_authority: args.change_authority as string,
+        });
+        fs.mkdirSync(path.resolve(root, '.decisions', 'views'), { recursive: true });
+        return `Initialized empty register at ${registerPath}`;
       },
     ),
   };

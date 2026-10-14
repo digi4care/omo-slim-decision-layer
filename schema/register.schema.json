@@ -63,6 +63,9 @@
                   "type": "string"
                 }
               },
+              "status_reason": {
+                "type": "string"
+              },
               "links": {
                 "default": [],
                 "type": "array",
@@ -136,6 +139,9 @@
                   "type": "string"
                 }
               },
+              "status_reason": {
+                "type": "string"
+              },
               "links": {
                 "default": [],
                 "type": "array",
@@ -208,6 +214,9 @@
                 "items": {
                   "type": "string"
                 }
+              },
+              "status_reason": {
+                "type": "string"
               },
               "links": {
                 "default": [],
@@ -286,6 +295,9 @@
                 "items": {
                   "type": "string"
                 }
+              },
+              "status_reason": {
+                "type": "string"
               },
               "links": {
                 "default": [],

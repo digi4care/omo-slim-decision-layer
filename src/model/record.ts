@@ -54,6 +54,7 @@ const BaseRecordFields = {
   owner: z.string().min(1, 'Owner is required'),
   change_authority: z.string().min(1, 'Change authority is required'),
   supersedes: z.array(RecordId).default([]),
+  status_reason: z.string().optional(),
   links: z.array(LinkSchema).default([]),
 };
 

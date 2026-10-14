@@ -1,10 +1,9 @@
 {
-  "name": "decision-layer",
-  "version": "0.1.0",
-  "description": "OMO-slim plugin: git-native decision register (REQ/CONSTRAINT/ASSUMPTION/DEC) for OpenCode",
+  "name": "@digi4care/omo-slim-decision-layer",
+  "version": "0.2.2",
+  "description": "Git-native decision register for OpenCode: typed records (REQ/CONSTRAINT/ASSUMPTION/DEC), owner ratification and traceability, as a companion plugin for oh-my-opencode-slim",
   "type": "module",
   "license": "MIT",
-  "private": true,
   "author": {
     "name": "Chris Engelhard",
     "email": "chris@chrisengelhard.nl",
@@ -12,7 +11,23 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/digi4care/omo-slim-plugin-decision-layer"
+    "url": "https://github.com/digi4care/omo-slim-decision-layer"
+  },
+  "homepage": "https://github.com/digi4care/omo-slim-decision-layer#readme",
+  "keywords": [
+    "opencode",
+    "opencode-plugin",
+    "omo-slim",
+    "decision-layer",
+    "decision-register",
+    "adr",
+    "requirements",
+    "traceability",
+    "agents",
+    "ai"
+  ],
+  "publishConfig": {
+    "access": "public"
   },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -23,29 +38,37 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "schema",
+    "skills",
+    "LICENSE",
+    "README.md"
   ],
   "scripts": {
-    "build": "bun build src/index.ts --outdir dist --target node --format esm --external @opencode-ai/plugin --external zod --external js-yaml",
+    "build": "bun build src/index.ts --outdir dist --target node --format esm --external @opencode-ai/plugin --external zod && tsc --emitDeclarationOnly",
     "test": "bun test",
     "typecheck": "tsc --noEmit",
     "lint": "biome lint .",
     "format": "biome format . --write",
     "check": "biome check .",
-    "release": "bun run build && mkdir -p release && npm pack --pack-destination release"
+    "release": "bun run build && mkdir -p release && npm pack --pack-destination release",
+    "release:patch": "npm version patch && npm run release && npm publish",
+    "release:minor": "npm version minor && npm run release && npm publish",
+    "release:major": "npm version major && npm run release && npm publish",
+    "prepublishOnly": "bun run build"
   },
   "dependencies": {
-    "js-yaml": "^4.1.0",
+    "js-yaml": "^5.4.3",
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.5.14",
-    "@opencode-ai/plugin": "1.18.32",
-    "@types/js-yaml": "^4.0.9",
+    "@biomejs/biome": "2.5.15",
+    "@opencode-ai/plugin": "1.18.35",
     "bun-types": "^1.4.2",
-    "typescript": "^5.9.3"
+    "typescript": "^7.0.2"
   },
   "peerDependencies": {
-    "@opencode-ai/plugin": ">=1.18.0"
+    "@opencode-ai/plugin": ">=1.18.0",
+    "zod": "^4.6.5"
   }
 }

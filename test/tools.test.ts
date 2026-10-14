@@ -3,9 +3,10 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import type { ToolContext } from '@opencode-ai/plugin';
-import yaml from 'js-yaml';
-import { initRegister, type Workspace } from '../src/register/register.js';
+import { dump } from 'js-yaml';
+import { initRegister, readRegister, type Workspace } from '../src/register/register.js';
 import { createDecisionTools } from '../src/tools/index.js';
+import { resolveProjectRoot, resolveRegisterPath } from '../src/tools/paths.js';
 
 function makeWorkspace(): Workspace {
   return {
@@ -16,12 +17,12 @@ function makeWorkspace(): Workspace {
   };
 }
 
-function makeCtx(worktree: string): ToolContext {
+function makeCtx(worktree: string, directory = worktree): ToolContext {
   return {
     sessionID: 's',
     messageID: 'm',
     agent: 'a',
-    directory: worktree,
+    directory,
     worktree,
     abort: new AbortController().signal,
     metadata() {},
@@ -57,7 +58,7 @@ describe('tools', () => {
     const bodyPath = path.join(tmpDir, 'body.yaml');
     fs.writeFileSync(
       bodyPath,
-      yaml.dump({
+      dump({
         decision: 'Use YAML',
         consequences: 'Readable diffs',
         alternatives_rejected: [{ alternative: 'JSON', rejected_because: 'Noisy diffs' }],
@@ -79,13 +80,16 @@ describe('tools', () => {
     expect(second).toContain('already accepted');
   });
 
-  test('decision-reject transitions', async () => {
+  test('decision-reject transitions and stores reason', async () => {
     await tools['decision-add'].execute({ type: 'REQ', title: 'R' }, ctx);
     const result = await tools['decision-reject'].execute(
       { id: 'REQ-0001', reason: 'Not needed' },
       ctx,
     );
     expect(result).toContain('Rejected');
+    const register = readRegister(path.join(tmpDir, '.decisions', 'register.yaml'));
+    expect(register.records[0].status).toBe('rejected');
+    expect(register.records[0].status_reason).toBe('Not needed');
   });
 
   test('decision-list filters', async () => {
@@ -106,7 +110,7 @@ describe('tools', () => {
     const decBodyPath = path.join(tmpDir, 'dec.yaml');
     fs.writeFileSync(
       decBodyPath,
-      yaml.dump({
+      dump({
         decision: 'x',
         consequences: 'y',
         links: [{ type: 'constrains', target: 'REQ-0001', rationale: 'r' }],
@@ -119,7 +123,7 @@ describe('tools', () => {
     );
 
     const assumptionBodyPath = path.join(tmpDir, 'assumption.yaml');
-    fs.writeFileSync(assumptionBodyPath, yaml.dump({ needed_to_close: 'verify' }), 'utf-8');
+    fs.writeFileSync(assumptionBodyPath, dump({ needed_to_close: 'verify' }), 'utf-8');
     await tools['decision-add'].execute(
       { type: 'ASSUMPTION', title: 'Orphan', body: 'assumption.yaml' },
       ctx,
@@ -136,7 +140,7 @@ describe('tools', () => {
     const bodyPath = path.join(tmpDir, 'dec.yaml');
     fs.writeFileSync(
       bodyPath,
-      yaml.dump({
+      dump({
         decision: 'x',
         consequences: 'y',
         links: [{ type: 'constrains', target: 'REQ-0001', rationale: 'r' }],
@@ -156,29 +160,165 @@ describe('tools', () => {
 
   test('decision-view writes markdown', async () => {
     await tools['decision-add'].execute({ type: 'REQ', title: 'R' }, ctx);
+    await tools['decision-reject'].execute({ id: 'REQ-0001', reason: 'Duplicate' }, ctx);
     const result = await tools['decision-view'].execute({}, ctx);
     expect(result).toContain('View written to');
     const viewPath = path.join(tmpDir, '.decisions', 'views', 'register.md');
     expect(fs.existsSync(viewPath)).toBe(true);
+    // VAL-005: view carries the same information as the register
+    expect(fs.readFileSync(viewPath, 'utf-8')).toContain('Status reason: Duplicate');
   });
 
-  test('decision-supersede replaces record', async () => {
+  test('decision-supersede replaces record and stores reason on old record', async () => {
     await tools['decision-add'].execute({ type: 'REQ', title: 'Old' }, ctx);
     await tools['decision-ratify'].execute({ id: 'REQ-0001' }, ctx);
     const byPath = path.join(tmpDir, 'new.yaml');
-    fs.writeFileSync(byPath, yaml.dump({ type: 'REQ', title: 'New' }), 'utf-8');
+    fs.writeFileSync(byPath, dump({ type: 'REQ', title: 'New' }), 'utf-8');
     const result = await tools['decision-supersede'].execute(
-      { id: 'REQ-0001', by: 'new.yaml' },
+      { id: 'REQ-0001', by: 'new.yaml', reason: 'Superseded by newer decision' },
       ctx,
     );
     expect(result).toContain('Superseded REQ-0001');
+    const register = readRegister(path.join(tmpDir, '.decisions', 'register.yaml'));
+    const oldRecord = register.records.find((r) => r.id === 'REQ-0001');
+    expect(oldRecord?.status).toBe('superseded');
+    expect(oldRecord?.status_reason).toBe('Superseded by newer decision');
+  });
+
+  test('decision-supersede without reason leaves status_reason absent', async () => {
+    await tools['decision-add'].execute({ type: 'REQ', title: 'Old' }, ctx);
+    const byPath = path.join(tmpDir, 'new.yaml');
+    fs.writeFileSync(byPath, dump({ type: 'REQ', title: 'New' }), 'utf-8');
+    await tools['decision-supersede'].execute({ id: 'REQ-0001', by: 'new.yaml' }, ctx);
+    const register = readRegister(path.join(tmpDir, '.decisions', 'register.yaml'));
+    const oldRecord = register.records.find((r) => r.id === 'REQ-0001');
+    expect(oldRecord?.status_reason).toBeUndefined();
   });
 
   test('path escape is refused', async () => {
     const bodyPath = path.join(tmpDir, 'body.yaml');
-    fs.writeFileSync(bodyPath, yaml.dump({ decision: 'x', consequences: 'y' }), 'utf-8');
+    fs.writeFileSync(bodyPath, dump({ decision: 'x', consequences: 'y' }), 'utf-8');
     await expect(
       tools['decision-add'].execute({ type: 'DEC', title: 'Escape', body: '../body.yaml' }, ctx),
     ).rejects.toThrow(/escapes worktree/);
+  });
+});
+
+describe('root resolution', () => {
+  let tmpDir: string;
+
+  beforeEach(async () => {
+    tmpDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'decision-layer-root-'));
+  });
+
+  afterEach(() => {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  test("worktree '/' with valid directory resolves to directory", () => {
+    const root = resolveProjectRoot({ worktree: '/', directory: tmpDir });
+    expect(root).toBe(path.resolve(tmpDir));
+    expect(root).not.toBe('/');
+  });
+
+  test("worktree '/' and directory '/' throws instead of touching /", () => {
+    expect(() => resolveProjectRoot({ worktree: '/', directory: '/' })).toThrow(/Refusing/);
+    expect(() => resolveRegisterPath('/')).toThrow(/Refusing/);
+  });
+
+  test('undefined worktree falls back to directory', () => {
+    expect(resolveProjectRoot({ directory: tmpDir })).toBe(path.resolve(tmpDir));
+  });
+
+  test('worktree missing on disk falls back to directory', () => {
+    const root = resolveProjectRoot({
+      worktree: path.join(tmpDir, 'does-not-exist'),
+      directory: tmpDir,
+    });
+    expect(root).toBe(path.resolve(tmpDir));
+  });
+
+  test('candidate resolving to "/" via .. is rejected', () => {
+    // '/tmp/..' still stats as an existing directory, but resolves to '/'
+    expect(resolveProjectRoot({ worktree: '/tmp/..', directory: tmpDir })).toBe(
+      path.resolve(tmpDir),
+    );
+  });
+
+  test('live shape: worktree "/" — init and add land in directory, never in /', async () => {
+    const tools = createDecisionTools();
+    const ctx = makeCtx('/', tmpDir);
+    const init = await tools['decision-init'].execute(
+      { id: 'acme', title: 'Acme', owner: 'repo-owner', change_authority: 'repo-owner' },
+      ctx,
+    );
+    expect(init).toContain('Initialized');
+    const add = await tools['decision-add'].execute({ type: 'REQ', title: 'live smoke test' }, ctx);
+    expect(add).toContain('Added REQ-0001');
+    expect(fs.existsSync(path.join(tmpDir, '.decisions', 'register.yaml'))).toBe(true);
+    expect(fs.existsSync('/.decisions')).toBe(false);
+  });
+});
+
+describe('decision-init', () => {
+  let tmpDir: string;
+  let ctx: ToolContext;
+  let tools: ReturnType<typeof createDecisionTools>;
+
+  const initArgs = {
+    id: 'acme',
+    title: 'Acme workspace',
+    owner: 'repo-owner',
+    change_authority: 'repo-owner',
+  };
+
+  beforeEach(async () => {
+    tmpDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'decision-layer-init-'));
+    ctx = makeCtx(tmpDir);
+    tools = createDecisionTools();
+  });
+
+  afterEach(() => {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  test('creates a valid empty register and pre-creates views dir', async () => {
+    const result = await tools['decision-init'].execute(initArgs, ctx);
+    expect(result).toContain('Initialized');
+    expect(result).toContain('.decisions/register.yaml');
+    const register = readRegister(path.join(tmpDir, '.decisions', 'register.yaml'));
+    expect(register.schema_version).toBe('1.0');
+    expect(register.workspace.id).toBe('acme');
+    expect(register.records).toHaveLength(0);
+    expect(fs.existsSync(path.join(tmpDir, '.decisions', 'views'))).toBe(true);
+  });
+
+  test('refuses to overwrite an existing register', async () => {
+    await tools['decision-init'].execute(initArgs, ctx);
+    const before = fs.readFileSync(path.join(tmpDir, '.decisions', 'register.yaml'), 'utf-8');
+    const second = await tools['decision-init'].execute(
+      { ...initArgs, id: 'other', title: 'Other' },
+      ctx,
+    );
+    expect(second).toContain('already exists');
+    expect(second).toContain('not overwriting');
+    const after = fs.readFileSync(path.join(tmpDir, '.decisions', 'register.yaml'), 'utf-8');
+    expect(after).toBe(before);
+    expect(readRegister(path.join(tmpDir, '.decisions', 'register.yaml')).workspace.id).toBe(
+      'acme',
+    );
+  });
+
+  test('after init, decision-add works end-to-end', async () => {
+    await tools['decision-init'].execute(initArgs, ctx);
+    const result = await tools['decision-add'].execute({ type: 'REQ', title: 'First record' }, ctx);
+    expect(result).toContain('Added REQ-0001');
+    const register = readRegister(path.join(tmpDir, '.decisions', 'register.yaml'));
+    expect(register.records).toHaveLength(1);
+  });
+
+  test('nine tools are exported including decision-init', () => {
+    expect(Object.keys(tools)).toHaveLength(9);
+    expect(Object.keys(tools)).toContain('decision-init');
   });
 });

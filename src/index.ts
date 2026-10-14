@@ -11,6 +11,6 @@ const DecisionLayer: Plugin = async () => {
 };
 
 export default {
-  id: 'decision-layer',
+  id: 'omo-slim-decision-layer',
   server: DecisionLayer,
 } satisfies PluginModule;

@@ -114,6 +114,22 @@ describe('Record id/type consistency', () => {
   });
 });
 
+describe('status_reason field', () => {
+  test('accepts record without status_reason', () => {
+    expect(RecordSchema.safeParse(baseRecord()).success).toBe(true);
+  });
+
+  test('accepts record with status_reason', () => {
+    expect(RecordSchema.safeParse({ ...baseRecord(), status_reason: 'not needed' }).success).toBe(
+      true,
+    );
+  });
+
+  test('rejects non-string status_reason', () => {
+    expect(RecordSchema.safeParse({ ...baseRecord(), status_reason: 42 }).success).toBe(false);
+  });
+});
+
 describe('Required fields', () => {
   test('rejects missing schema_version', () => {
     const { schema_version: _schema_version, ...rest } = baseRecord();

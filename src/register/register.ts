@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import yaml from 'js-yaml';
+import { dump, load } from 'js-yaml';
 import { z } from 'zod';
 import {
   type AddRecordInput,
@@ -63,11 +63,12 @@ const RecordKeyOrder: Record<string, number> = {
   owner: 5,
   change_authority: 6,
   supersedes: 7,
-  links: 8,
-  needed_to_close: 9,
-  decision: 10,
-  alternatives_rejected: 11,
-  consequences: 12,
+  status_reason: 8,
+  links: 9,
+  needed_to_close: 10,
+  decision: 11,
+  alternatives_rejected: 12,
+  consequences: 13,
 };
 
 const LinkKeyOrder: Record<string, number> = {
@@ -126,6 +127,10 @@ function sortObjectKeys<T extends Record<string, unknown>>(
 
 function normalizeRecord(record: DecisionRecord): Record<string, unknown> {
   const base = sortObjectKeys(record as Record<string, unknown>, RecordKeyOrder);
+  // Never serialize absent optional fields (would dump as `null`).
+  if (base.status_reason === undefined) {
+    delete base.status_reason;
+  }
   if (Array.isArray(base.links)) {
     base.links = base.links.map((link) =>
       sortObjectKeys(link as Record<string, unknown>, LinkKeyOrder),
@@ -153,10 +158,10 @@ function serializeRegister(register: Register): string {
     } as Record<string, unknown>,
     RegisterKeyOrder,
   );
-  return yaml.dump(normalized, {
+  return dump(normalized, {
     noRefs: true,
     lineWidth: -1,
-    quotingType: '"',
+    quoteStyle: 'double',
     sortKeys: false,
   });
 }
@@ -184,7 +189,7 @@ export function readRegister(filePath: string): Register {
   }
   let parsed: unknown;
   try {
-    parsed = yaml.load(content);
+    parsed = load(content);
   } catch (err) {
     throw new Error(
       `Invalid YAML at ${filePath}: ${err instanceof Error ? err.message : String(err)}`,
@@ -235,7 +240,7 @@ export function initRegister(filePath: string, workspace: Workspace): void {
 export function addRecord(filePath: string, input: AddRecordInput): DecisionRecord {
   if (!fs.existsSync(filePath)) {
     throw new Error(
-      `Register not found at ${filePath}. Run initRegister first to create a new register.`,
+      `Register not found at ${filePath}. Run the decision-init tool first to create a new register.`,
     );
   }
   const register = readRegister(filePath);
@@ -280,7 +285,12 @@ export function addRecord(filePath: string, input: AddRecordInput): DecisionReco
   return record;
 }
 
-function transitionRecord(filePath: string, id: string, target: RecordStatus): DecisionRecord {
+function transitionRecord(
+  filePath: string,
+  id: string,
+  target: RecordStatus,
+  reason?: string,
+): DecisionRecord {
   const register = readRegister(filePath);
   const record = register.records.find((r) => r.id === id);
   if (!record) {
@@ -296,6 +306,9 @@ function transitionRecord(filePath: string, id: string, target: RecordStatus): D
     );
   }
   record.status = target;
+  if (reason) {
+    record.status_reason = reason;
+  }
   writeRegister(filePath, register);
   return record;
 }
@@ -304,14 +317,15 @@ export function ratifyRecord(filePath: string, id: string): DecisionRecord {
   return transitionRecord(filePath, id, 'accepted');
 }
 
-export function rejectRecord(filePath: string, id: string): DecisionRecord {
-  return transitionRecord(filePath, id, 'rejected');
+export function rejectRecord(filePath: string, id: string, reason?: string): DecisionRecord {
+  return transitionRecord(filePath, id, 'rejected', reason);
 }
 
 export function supersedeRecord(
   filePath: string,
   oldId: string,
   newRecordInput: AddRecordInput,
+  reason?: string,
 ): DecisionRecord {
   const register = readRegister(filePath);
   const oldRecord = register.records.find((r) => r.id === oldId);
@@ -363,6 +377,9 @@ export function supersedeRecord(
   }
 
   oldRecord.status = 'superseded';
+  if (reason) {
+    oldRecord.status_reason = reason;
+  }
   register.records.push(newRecord);
   writeRegister(filePath, register);
   return newRecord;
