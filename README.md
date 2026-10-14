@@ -54,10 +54,8 @@ Add the plugin to your OpenCode config:
 OpenCode installs the plugin automatically from npm on the next start. To pin
 a version, replace `@latest` with a specific version (e.g. `@0.2.1`).
 
-**Local development / offline use.** Every release is also packed as a plain
-`.tgz` in the `release/` folder (semver). A named entry only works for packages
-that exist on npm; for a local or private build, reference the built file
-directly instead:
+**Local development.** For a local or private build, reference the built file
+directly instead of a package name:
 
 ```jsonc
 {

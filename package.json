@@ -1,6 +1,6 @@
 {
   "name": "@digi4care/omo-slim-decision-layer",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Git-native decision register for OpenCode: typed records (REQ/CONSTRAINT/ASSUMPTION/DEC), owner ratification and traceability, as a companion plugin for oh-my-opencode-slim",
   "type": "module",
   "license": "MIT",
@@ -45,7 +45,7 @@
     "README.md"
   ],
   "scripts": {
-    "build": "bun build src/index.ts --outdir dist --target node --format esm --external @opencode-ai/plugin --external zod && tsc --emitDeclarationOnly",
+    "build": "rm -rf dist && bun build src/index.ts --outdir dist --target node --format esm --external @opencode-ai/plugin --external zod && tsc --emitDeclarationOnly",
     "test": "bun test",
     "typecheck": "tsc --noEmit",
     "lint": "biome lint .",
