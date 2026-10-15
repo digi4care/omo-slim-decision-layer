@@ -24,6 +24,11 @@ Built as a companion plugin for
 - **Interview integration** — when oh-my-opencode-slim's `/interview` command
   runs, the plugin injects a discipline prompt so a closed interview ends as
   records in the register instead of loose markdown.
+- **Skill availability** — on OpenCode v2 the plugin registers its own
+  `skills/decision-layer/SKILL.md` at startup via `ctx.skill.transform`, so the
+  discipline is loaded automatically without a separate install step. OpenCode
+  v1 has no `skill.transform`; installing the skill to
+  `~/.config/opencode/skills/decision-layer/` is not yet implemented.
 - **Traceability** — typed links (`refines`, `depends_on`, `constrains`,
   `relates_to`) between records, with queries for orphans and reverse lookup.
 
@@ -64,14 +69,27 @@ Add the plugin to your OpenCode config:
 OpenCode installs the plugin automatically from npm on the next start. To pin
 a version, replace `@latest` with a specific version (e.g. `@0.2.1`).
 
-**Local development.** For a local or private build, reference the built file
-directly instead of a package name:
+**Local development.** For a local or private build, reference the build output
+directly instead of a package name. The form depends on the host version:
 
-```jsonc
-{
-  "plugin": ["file:///absolute/path/to/node_modules/@digi4care/omo-slim-decision-layer/dist/index.js"]
-}
-```
+- **OpenCode v1** (`@opencode-ai/plugin` 1.x) expects the bundle file:
+
+  ```jsonc
+  {
+    "plugin": ["file:///absolute/path/to/node_modules/@digi4care/omo-slim-decision-layer/dist/index.js"]
+  }
+  ```
+
+- **OpenCode v2** (`@opencode/plugin` 2.x) expects the directory:
+
+  ```jsonc
+  {
+    "plugin": ["file:///absolute/path/to/node_modules/@digi4care/omo-slim-decision-layer/dist"]
+  }
+  ```
+
+  Using the file path in v2 logs `configured plugin path must be a directory`
+  and the plugin is not loaded.
 
 `dist/index.js` is a single bundle; only `@opencode-ai/plugin` and `zod` are
 external, so the host supplies those.
@@ -81,8 +99,8 @@ enforces it too. A freshly published version cannot be installed by OpenCode
 until it is older than that many days. `min-release-age-exclude` helps for
 direct `npm install` calls but **not** for OpenCode's bundled installer
 (observed on OpenCode 1.18.35). Until the window passes, use the `file://`
-form above, or install into the OpenCode package cache yourself
-(`bun add <pkg>` in `~/.cache/opencode/packages/<pkg>@latest`).
+form above that matches your host version, or install into the OpenCode package
+cache yourself (`bun add <pkg>` in `~/.cache/opencode/packages/<pkg>@latest`).
 
 ## Development
 

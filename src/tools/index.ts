@@ -131,7 +131,7 @@ function makeTool<TArgs extends Record<string, unknown>>(
 export function createDecisionTools(): Record<string, ToolDefinition> {
   return {
     'decision-add': makeTool(
-      'Add a proposed decision record to the register',
+      'Add a proposed decision record to the register. Use this whenever a requirement, non-negotiable, unverified assumption or decision comes up — do not leave them in prose. Records are written only through these tools: never edit .decisions/register.yaml by hand.',
       {
         type: z.enum(RecordTypes),
         title: z.string().min(1),
@@ -151,7 +151,7 @@ export function createDecisionTools(): Record<string, ToolDefinition> {
     ),
 
     'decision-ratify': makeTool(
-      'Ratify a proposed record (proposed -> accepted)',
+      'Ratify a proposed record (proposed -> accepted). OWNER ACT: call only when the user explicitly asks you to ratify, never on your own initiative.',
       {
         id: z.string(),
       },
@@ -168,7 +168,7 @@ export function createDecisionTools(): Record<string, ToolDefinition> {
     ),
 
     'decision-reject': makeTool(
-      'Reject a proposed record (proposed -> rejected)',
+      'Reject a proposed record (proposed -> rejected). OWNER ACT: like ratify, only on an explicit user request.',
       {
         id: z.string(),
         reason: z.string().min(1),
@@ -186,7 +186,7 @@ export function createDecisionTools(): Record<string, ToolDefinition> {
     ),
 
     'decision-supersede': makeTool(
-      'Supersede a record with a new proposed record',
+      'Supersede a record with a new proposed record. Use this instead of editing an existing record — history stays append-only.',
       {
         id: z.string(),
         by: z.string().describe('Path to YAML file describing the new record'),
@@ -282,7 +282,7 @@ export function createDecisionTools(): Record<string, ToolDefinition> {
     ),
 
     'decision-validate': makeTool(
-      'Validate the register file against the schema',
+      'Validate the register file against the schema. Run after every write; a register that does not validate is an open error, not a done task.',
       {},
       async (_args, ctx) => {
         const root = resolveProjectRoot(ctx);
@@ -297,7 +297,7 @@ export function createDecisionTools(): Record<string, ToolDefinition> {
     ),
 
     'decision-view': makeTool(
-      'Generate a markdown view of the register',
+      'Generate a disposable markdown view of the register. The view is generated output, never the source of truth.',
       {},
       async (_args, ctx) => {
         const root = resolveProjectRoot(ctx);
@@ -315,7 +315,7 @@ export function createDecisionTools(): Record<string, ToolDefinition> {
     ),
 
     'decision-init': makeTool(
-      'Create an empty decision register at .decisions/register.yaml (refuses to overwrite)',
+      'Create an empty decision register at .decisions/register.yaml (refuses to overwrite). Run once per repo before any other decision tool.',
       {
         id: z.string().min(1).describe('Workspace slug'),
         title: z.string().min(1),

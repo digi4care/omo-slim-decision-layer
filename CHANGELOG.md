@@ -6,6 +6,20 @@ gets a version number and a `.tgz` in `release/`.
 
 ## [Unreleased]
 
+### Added
+
+- **v2 self-registered skill.** On OpenCode v2 the plugin registers its own
+  `skills/decision-layer/SKILL.md` during `setup` via `ctx.skill.transform`, so
+  the decision-layer discipline is available without a manual install step.
+  Empirically verified on `@opencode/plugin` 2.0.29.
+
+### Fixed
+
+- README now correctly distinguishes local plugin paths: OpenCode v1 needs
+  `.../dist/index.js`, while OpenCode v2 needs `.../dist` (the directory).
+  Using the file path in v2 logs `configured plugin path must be a directory`
+  and fails to load the plugin.
+
 ## [0.4.0] - 2026-10-14
 
 ### Breaking

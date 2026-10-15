@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { DECISION_DISCIPLINE_PROMPT } from '../prompts/decision-discipline.js';
+import { loadDecisionSkill } from '../skills/register.js';
 import { createDecisionTools } from '../tools/index.js';
 
 /**
@@ -22,6 +23,9 @@ export interface V2Context {
   location: { directory: string };
   tool: {
     transform: (callback: (editor: V2TransformEditor) => void) => Promise<unknown>;
+  };
+  skill?: {
+    transform: (callback: (editor: { add: (info: unknown) => void }) => void) => Promise<unknown>;
   };
   session: {
     hook: (name: string, callback: (event: unknown) => Promise<void> | void) => Promise<unknown>;
@@ -68,6 +72,19 @@ export function createV2Setup() {
         });
       }
     });
+
+    try {
+      if (typeof ctx.skill?.transform === 'function') {
+        const skill = loadDecisionSkill();
+        if (skill) {
+          await ctx.skill.transform((editor) => {
+            editor.add(skill);
+          });
+        }
+      }
+    } catch (error) {
+      console.warn('[decision-layer] skill registration failed:', error);
+    }
 
     await ctx.session.hook('prompt', async (event: unknown) => {
       try {
