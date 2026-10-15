@@ -7,3 +7,6 @@ release/
 
 # docs are local only, never committed or published
 docs/
+
+# omo-slim deepwork state stays local
+.slim/deepwork/

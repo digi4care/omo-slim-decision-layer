@@ -18,7 +18,7 @@ function makeTextPart(text: string): Part {
 
 describe('createInterviewInjectHook', () => {
   it('leaves non-interview commands untouched', async () => {
-    const hook = createInterviewInjectHook();
+    const hook = createInterviewInjectHook(() => true);
     const output = { parts: [makeTextPart('base output')] };
 
     await hook(otherInput, output);
@@ -27,8 +27,17 @@ describe('createInterviewInjectHook', () => {
     expect((output.parts[0] as Extract<Part, { type: 'text' }>).text).toBe('base output');
   });
 
+  it('injects nothing when the plugin is disabled', async () => {
+    const hook = createInterviewInjectHook(() => false);
+    const output = { parts: [] as Part[] };
+
+    await hook(interviewInput, output);
+
+    expect(output.parts).toHaveLength(0);
+  });
+
   it('appends exactly one prompt part for interview', async () => {
-    const hook = createInterviewInjectHook();
+    const hook = createInterviewInjectHook(() => true);
     const output = { parts: [makeTextPart('base output')] };
 
     await hook(interviewInput, output);
@@ -44,7 +53,7 @@ describe('createInterviewInjectHook', () => {
   });
 
   it('is idempotent across repeated calls', async () => {
-    const hook = createInterviewInjectHook();
+    const hook = createInterviewInjectHook(() => true);
     const output = { parts: [] as Part[] };
 
     await hook(interviewInput, output);
@@ -54,7 +63,7 @@ describe('createInterviewInjectHook', () => {
   });
 
   it('does not throw when output.parts is malformed', async () => {
-    const hook = createInterviewInjectHook();
+    const hook = createInterviewInjectHook(() => true);
     const output = { parts: undefined } as unknown as { parts: Part[] };
 
     await expect(hook(interviewInput, output)).resolves.toBeUndefined();

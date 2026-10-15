@@ -29,8 +29,6 @@ Built as a companion plugin for
   discipline is loaded automatically without a separate install step. OpenCode
   v1 has no `skill.transform`; installing the skill to
   `~/.config/opencode/skills/decision-layer/` is not yet implemented.
-- **Traceability** — typed links (`refines`, `depends_on`, `constrains`,
-  `relates_to`) between records, with queries for orphans and reverse lookup.
 
 ## Compatibility
 
@@ -44,6 +42,12 @@ One package, two registration paths, sharing the same register and tool logic:
 
 ## Agent tools
 
+The nine tools carry no embedded discipline of their own. The discipline is
+carried by the skill and by a short reminder in the system prompt — the
+reminder is fixed text, never register contents, because injecting changing bytes
+on every request would invalidate the provider prompt cache. The register is
+fetched on demand through `decision-list`.
+
 | Tool | Purpose |
 |---|---|
 | `decision-init` | Create the register (idempotent, never overwrites) |
@@ -55,6 +59,42 @@ One package, two registration paths, sharing the same register and tool logic:
 | `decision-query` | Orphans, or "what links to this record" |
 | `decision-validate` | Validate the register against the schema |
 | `decision-view` | Regenerate the markdown view |
+
+## Configuration
+
+By default the plugin is inert: it registers its nine tools and does nothing
+else. Enabling it turns on the always-available reminder, the interview
+discipline, and — on v2 — the self-registered skill.
+
+```jsonc
+// in your OpenCode config
+{
+  "decision-layer": { "enabled": true }
+}
+```
+
+Two sources, merged **per key**, not per file:
+
+| Source | Key it contributes |
+|---|---|
+| `<project>/opencode.json(c)` | both keys |
+| `~/.config/opencode/opencode.jsonc` | `enabled` only |
+| `<project>/.opencode/decision-layer.json` (deprecated) | both keys |
+
+| Key | Meaning | Scope |
+|---|---|---|
+| `enabled` | turns the guidance on | **user** — safe to set globally |
+| `registerPath` | where the register lives | **repository** — never read from the global file, or one path would apply to every repo on the machine |
+
+Because precedence is per key, a project file that sets only `registerPath`
+does not erase an `enabled` you set globally.
+
+`OPENCODE_CONFIG` overrides the config root, either as a directory or as an
+explicit file path.
+
+A config file that exists but cannot be parsed is skipped with a `console.warn`
+rather than failing silently — silent failure is the worst possible symptom of a
+flag that defaults to off.
 
 ## Install
 

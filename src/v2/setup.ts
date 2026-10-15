@@ -1,5 +1,7 @@
 import { z } from 'zod';
+import { loadConfig } from '../config.js';
 import { DECISION_DISCIPLINE_PROMPT } from '../prompts/decision-discipline.js';
+import { pointerAlreadyPresent, REGISTER_POINTER } from '../prompts/register-pointer.js';
 import { loadDecisionSkill } from '../skills/register.js';
 import { createDecisionTools } from '../tools/index.js';
 
@@ -36,6 +38,34 @@ const INTERVIEW_MARKER =
   'You are running an interview q&a session for the user inside their repository';
 const SENTINEL = '<!-- decision-layer:inject v1 -->';
 
+export interface V2SessionContextEvent {
+  sessionID: string;
+  system: Array<{ type: 'text'; text: string }>;
+}
+
+/**
+ * Append the always-available reminder to the system prompt.
+ *
+ * The event's `system` array is the v2 equivalent of v1's
+ * `experimental.chat.system.transform` output. Only the trailing state is
+ * touched; the reminder is a fixed string, so the bytes never change and the
+ * provider prompt cache stays intact.
+ */
+export function createRegisterPointerHandler(enabled: boolean) {
+  return async (event: unknown): Promise<void> => {
+    try {
+      if (!enabled) return;
+      if (!isRecord(event)) return;
+      const system = (event as unknown as V2SessionContextEvent).system;
+      if (!Array.isArray(system)) return;
+      if (pointerAlreadyPresent(system.map((s) => s?.text ?? ''))) return;
+      system.push({ type: 'text', text: REGISTER_POINTER });
+    } catch {
+      // Never break the host on injection failure.
+    }
+  };
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
@@ -43,6 +73,12 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 export function createV2Setup() {
   return async (ctx: V2Context): Promise<void> => {
     const projectDir = ctx.location.directory;
+    let enabled = false;
+    try {
+      enabled = loadConfig(projectDir).enabled;
+    } catch {
+      // A broken config must never stop the tools from loading.
+    }
     const tools = createDecisionTools() as unknown as Record<
       string,
       {
@@ -74,7 +110,7 @@ export function createV2Setup() {
     });
 
     try {
-      if (typeof ctx.skill?.transform === 'function') {
+      if (enabled && typeof ctx.skill?.transform === 'function') {
         const skill = loadDecisionSkill();
         if (skill) {
           await ctx.skill.transform((editor) => {
@@ -86,8 +122,11 @@ export function createV2Setup() {
       console.warn('[decision-layer] skill registration failed:', error);
     }
 
+    await ctx.session.hook('context', createRegisterPointerHandler(enabled));
+
     await ctx.session.hook('prompt', async (event: unknown) => {
       try {
+        if (!enabled) return;
         if (!isRecord(event)) return;
         const prompt = event.prompt;
         if (!isRecord(prompt) || typeof prompt.text !== 'string') return;

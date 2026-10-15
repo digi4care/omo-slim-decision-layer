@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { loadConfig } from '../config.js';
+import { cachedConfig } from '../config.js';
 
 export interface ProjectRootContext {
   worktree?: string;
@@ -53,7 +53,7 @@ export function resolveRegisterPath(root: string): string {
   if (resolvedRoot === '/') {
     throw new Error('Refusing to use "/" as the project root for the decision register');
   }
-  const config = loadConfig(resolvedRoot);
+  const config = cachedConfig(resolvedRoot);
   const registerPath = path.resolve(resolvedRoot, config.registerPath);
   if (!withinWorktree(resolvedRoot, registerPath)) {
     throw new Error(`Configured register path escapes worktree: ${config.registerPath}`);

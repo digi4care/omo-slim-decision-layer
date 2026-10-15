@@ -8,10 +8,24 @@ gets a version number and a `.tgz` in `release/`.
 
 ### Added
 
-- **v2 self-registered skill.** On OpenCode v2 the plugin registers its own
-  `skills/decision-layer/SKILL.md` during `setup` via `ctx.skill.transform`, so
-  the decision-layer discipline is available without a manual install step.
-  Empirically verified on `@opencode/plugin` 2.0.29.
+- **`enabled` flag.** The plugin is inert by default: it registers its nine tools
+  and does nothing else. `"decision-layer": { "enabled": true }` turns on the
+  interview discipline, the self-registered skill, and a fixed-text reminder in
+  the system prompt telling the agent to consult the register before deciding.
+  Resolved from `<project>/opencode.json(c)` and
+  `~/.config/opencode/opencode.jsonc`, merged per key. `enabled` is a
+  user-level key and may be set globally; `registerPath` is repository-level and
+  is never read from the global file. `OPENCODE_CONFIG` overrides the config
+  root.
+- A config file that exists but cannot be parsed now logs a warning instead of
+  failing silently.
+
+### Changed
+
+- The nine tool descriptions are neutral again. Carrying discipline in them
+  conflicts with `enabled: false` and cannot be gated on v1, where the tool
+  hook is registered before a session exists. The discipline is carried by the
+  skill and the prompt reminder instead.
 
 ### Fixed
 
