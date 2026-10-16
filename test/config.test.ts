@@ -34,6 +34,46 @@ describe('loadConfig', () => {
     expect(config.enabled).toBe(false);
     expect(config.registerPath).toBe('.decisions/register.yaml');
     expect(config.log).toBe(false);
+    expect(config.requireBeadsForDelegation).toBe(false);
+  });
+
+  it('ignores requireBeadsForDelegation from global config', () => {
+    const root = scratch();
+    const globalPath = write(
+      scratch(),
+      'opencode.jsonc',
+      JSON.stringify({ 'decision-layer': { requireBeadsForDelegation: true } }),
+    );
+    expect(loadConfig(root, globalPath).requireBeadsForDelegation).toBe(false);
+  });
+
+  it('honours project-scoped requireBeadsForDelegation and project overrides', () => {
+    const root = scratch();
+    const globalPath = path.join(scratch(), 'missing.jsonc');
+    write(
+      root,
+      'opencode.jsonc',
+      JSON.stringify({ 'decision-layer': { requireBeadsForDelegation: true } }),
+    );
+    expect(loadConfig(root, globalPath).requireBeadsForDelegation).toBe(true);
+    write(
+      root,
+      'opencode.json',
+      JSON.stringify({ 'decision-layer': { requireBeadsForDelegation: false } }),
+    );
+    expect(loadConfig(root, globalPath).requireBeadsForDelegation).toBe(false);
+  });
+
+  it('ignores non-boolean requireBeadsForDelegation values', () => {
+    const root = scratch();
+    write(
+      root,
+      'opencode.jsonc',
+      JSON.stringify({ 'decision-layer': { requireBeadsForDelegation: 'yes' } }),
+    );
+    expect(loadConfig(root, path.join(scratch(), 'missing.jsonc')).requireBeadsForDelegation).toBe(
+      false,
+    );
   });
 
   it('reads log from the global config so debugging needs no repo edits', () => {

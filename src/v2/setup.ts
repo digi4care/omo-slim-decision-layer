@@ -1,11 +1,13 @@
+import fs from 'node:fs';
 import { z } from 'zod';
 import { loadConfig } from '../config.js';
+import { createDelegationBeadsHook } from '../hooks/delegation-beads.js';
 import { appendActivationLog, registerExists } from '../log.js';
 import { DECISION_DISCIPLINE_PROMPT } from '../prompts/decision-discipline.js';
 import { pointerAlreadyPresent, REGISTER_POINTER } from '../prompts/register-pointer.js';
 import { loadDecisionSkill } from '../skills/register.js';
 import { createDecisionTools } from '../tools/index.js';
-import { INTERVIEW_PROMOTION_SYMBOL, promoteInterview } from '../tools/interview-promotion.js';
+import { registerInterviewProjectRoot } from '../tools/interview-bridge.js';
 
 /**
  * v2 registration path, next to the v1 `server` export.
@@ -14,7 +16,8 @@ import { INTERVIEW_PROMOTION_SYMBOL, promoteInterview } from '../tools/interview
  * - tools are registered via `ctx.tool.transform` with a full input schema
  *   (zod object) instead of a raw args shape;
  * - the tool context has no `worktree`/`directory`, so the project root is
- *   captured from `ctx.location.directory` at setup time and closed over;
+ *   captured from `ctx.location.project.directory` (falling back to
+ *   `ctx.location.directory`) at setup time and closed over;
  * - the interview injection uses `ctx.session.hook('prompt')` and mutates the
  *   outgoing prompt instead of appending to `command.execute.before` parts.
  */
@@ -24,9 +27,10 @@ interface V2TransformEditor {
 }
 
 export interface V2Context {
-  location: { directory: string };
+  location: { directory: string; project?: { directory?: string } };
   tool: {
     transform: (callback: (editor: V2TransformEditor) => void) => Promise<unknown>;
+    hook?: (name: string, callback: (event: unknown) => Promise<void> | void) => Promise<unknown>;
   };
   skill?: {
     transform: (callback: (editor: { add: (info: unknown) => void }) => void) => Promise<unknown>;
@@ -90,26 +94,26 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 export function createV2Setup() {
   return async (ctx: V2Context): Promise<void> => {
-    const projectDir = ctx.location.directory;
-    (globalThis as Record<PropertyKey, unknown>)[INTERVIEW_PROMOTION_SYMBOL] = {
-      promote: (input: { projectRoot: string; specPath: string; sessionID: string }) =>
-        input.projectRoot === projectDir
-          ? promoteInterview(input)
-          : Promise.resolve({
-              status: 'needs-review' as const,
-              reusedIDs: [],
-              addedIDs: [],
-              openQuestions: ['Project root does not match configured project'],
-            }),
-    };
+    const projectDir = resolveV2ProjectRoot(ctx.location);
+    registerInterviewProjectRoot(projectDir);
     let enabled = false;
     let shouldLog = false;
+    let requireBeadsForDelegation = false;
     try {
       const config = loadConfig(projectDir);
       enabled = config.enabled;
       shouldLog = config.log;
+      requireBeadsForDelegation = config.requireBeadsForDelegation;
     } catch {
       // A broken config must never stop the tools from loading.
+    }
+    if (enabled && requireBeadsForDelegation) {
+      if (typeof ctx.tool.hook !== 'function') {
+        throw new Error(
+          '[decision-layer] requireBeadsForDelegation is enabled but tool hooks are unavailable',
+        );
+      }
+      await ctx.tool.hook('execute.before', createDelegationBeadsHook(projectDir));
     }
     const tools = createDecisionTools() as unknown as Record<
       string,
@@ -180,4 +184,22 @@ export function createV2Setup() {
       }
     });
   };
+}
+
+function canonicalProjectRoot(candidate: unknown): string | undefined {
+  if (typeof candidate !== 'string' || !candidate.trim()) return undefined;
+  try {
+    const resolved = fs.realpathSync(candidate);
+    if (resolved === '/' || !fs.statSync(resolved).isDirectory()) return undefined;
+    return resolved;
+  } catch {
+    return undefined;
+  }
+}
+
+function resolveV2ProjectRoot(location: V2Context['location']): string {
+  const root =
+    canonicalProjectRoot(location.project?.directory) ?? canonicalProjectRoot(location.directory);
+  if (!root) throw new Error('Cannot resolve a valid v2 project root');
+  return root;
 }

@@ -8,6 +8,7 @@ export const ConfigSchema = z.object({
   registerPath: z.string().default('.decisions/register.yaml'),
   /** Append one line per session to `.decisions/activation.log`. Dev only. */
   log: z.boolean().default(false),
+  requireBeadsForDelegation: z.boolean().default(false),
 });
 
 export type DecisionLayerConfig = z.infer<typeof ConfigSchema>;
@@ -104,6 +105,7 @@ export interface DecisionLayerRawConfig {
   enabled?: boolean;
   registerPath?: string;
   log?: boolean;
+  requireBeadsForDelegation?: boolean;
 }
 
 function defaultGlobalConfigPath(): string {
@@ -139,6 +141,10 @@ function collectRawConfig(projectRoot: string, globalConfigPath: string): Decisi
     // come from either level, so you can switch it on globally while chasing
     // a problem without touching every repository.
     if (typeof source.log === 'boolean') merged.log = source.log;
+    // This is a repository policy and must never be inherited from global config.
+    if (scope === 'project' && typeof source.requireBeadsForDelegation === 'boolean') {
+      merged.requireBeadsForDelegation = source.requireBeadsForDelegation;
+    }
     if (
       scope === 'project' &&
       typeof source.registerPath === 'string' &&
@@ -173,6 +179,7 @@ export function loadConfig(
     enabled: raw.enabled ?? false,
     registerPath: raw.registerPath ?? DEFAULT_REGISTER_PATH,
     log: raw.log ?? false,
+    requireBeadsForDelegation: raw.requireBeadsForDelegation ?? false,
   });
 }
 
