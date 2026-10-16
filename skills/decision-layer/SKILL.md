@@ -64,6 +64,16 @@ The register at `.decisions/register.yaml` is the single source of truth for
    independent work; other proposed records do not block by default. If the
    register is missing, ask before initializing it. This is an agent stop,
    not a universal technical gate.
+10. **Use the bead as the work/evidence index.** For delegated or multi-round
+    work, ask before `br init` if `.beads/` is missing. At bead creation include
+    the spec/source path and relevant current register IDs with their statuses.
+    After verification, add a comment with code and test paths, test command,
+    result, and unknowns. Add a commit hash only after that commit exists.
+    Find closed as well as open work with `br search '<record-id>' --all --json`.
+    Mark retrospective reconstruction explicitly and never invent old evidence.
+    Do not supersede an accepted record solely to add an administrative bead
+    link; the register explains why, the bead tracks work and evidence, and Git
+    shows what changed. These instructions do not create links automatically.
 
 ## Reference
 

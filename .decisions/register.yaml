@@ -172,3 +172,23 @@ records:
     decision: Na bevestigde interviewafronding promoveert de optionele koppeling uitsluitend expliciete, onderbouwde kandidaten als proposed en meldt resultaat, lacunes en herstelpad. De spec mag afgerond blijven als registratie review vereist. /implement start nooit automatisch. Afhankelijk werk aan structurele grenzen, data- of interfacecontracten of moeilijk omkeerbare keuzes begint pas nadat Chris de bepalende keuze via het register heeft geratificeerd; onafhankelijk werk mag doorgaan. Bij ontbrekend register wordt eerst toestemming voor initialisatie gevraagd. Dit is agentbeleid, geen universeel afgedwongen host-gate.
     consequences: Een mislukte registratie verbergt de voltooide spec niet, maar kan afhankelijke implementatie blokkeren totdat de bepalende keuze accepted is. Overige proposed records blokkeren werk niet automatisch. De agent legt open gates en concrete vervolgstappen met kosten en aanbeveling uit; ratify/reject en /implement vereisen afzonderlijke eigenaarshandelingen.
     context: Chris koos in de afgeronde workflowspec interview/analyseer-eerst-opnieuw-hoe-mijn-workflow-als-so-3cb4c2d5-ad42-471b-8ca0-f1e93b5d8e0f.md voor registratie na een expliciet interview, afzonderlijke start van /implement en ratificatie vóór code die van een bepalende architectuurkeuze afhangt. DEC-0004 liet implementatie met waarschuwing doorgaan, ook wanneer juist die keuze nog openstaat; die uitzondering wordt hiermee vervangen.
+  - schema_version: "1.0"
+    id: DEC-0006
+    type: DEC
+    title: Beads indexeren uitvoering en bewijs; register bewaart waarom
+    status: accepted
+    owner: Chris Engelhard
+    change_authority: owner
+    supersedes: []
+    links:
+      - type: decides
+        target: REQ-0002
+        rationale: Dit is de gekozen minimale uitvoering voor de voorgestelde eis van controleerbare traceability.
+    alternatives_rejected:
+      - alternative: Voeg directe bead-links toe aan ieder bestaand accepted registerrecord
+        rejected_because: Elke metadatawijziging zou supersede en nieuwe ratificatie vereisen en semantische geschiedenis vervuilen.
+      - alternative: Bouw nu een aparte persistente traceability-index
+        rejected_because: Die introduceert extra code en een tweede actueel te houden index voordat de kleine bead-route is getoetst.
+    decision: "Gebruik voor toekomstig meerstaps- en gedelegeerd werk de bead als index van uitvoering en verificatie: vermeld bij aanmaak het spec-/bronpad en de actuele relevante register-ID(s), en voeg na verificatie een comment toe met code-/testpaden, testcommando, uitkomst en onbekenden. Voeg de commit-hash pas toe nadat een echte lokale commit bestaat. Vind ook gesloten beads via br search <record-id> --all. Geef bij een nieuw record desgewenst een external link naar een reeds bestaande bead; supersede geen accepted record alleen voor een administratieve link. Bewaar werkstatus niet in het register."
+    consequences: "Dit houdt register, bead en Git als afzonderlijke bronnen van waarheid en beperkt administratieve churn. Een ouder registerrecord heeft geen directe uitgaande bead-link: zoeken met --all is nodig en naamgeving/commentkwaliteit bepaalt vindbaarheid. Een comment bewijst geen testuitvoering zonder afzonderlijk controleerbaar testbewijs. Retrospectief werk krijgt expliciet een reconstructielabel en onbekend bewijs blijft onbekend."
+    context: Chris koos na een read-only proef van DEC-0005 via br search --all, bead decision-layer-8r8 en commit 4337826 voor een lichte bron-naar-bewijsketen. Het register beschrijft waarom; beads bewaren taakstatus en bewijs; Git bewaart de werkelijke code. Oude accepted records uitsluitend voor een administratieve bead-link superseden zou nieuwe IDs en her-ratificatie vragen.

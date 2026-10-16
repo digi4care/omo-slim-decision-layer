@@ -44,6 +44,9 @@ describe('loadDecisionSkill', () => {
     expect(skill?.content).toContain('decision-layer discipline');
     expect(skill?.content).toContain('Pause only dependent architecture work');
     expect(skill?.content).toContain('not a universal technical gate');
+    expect(skill?.content).toContain("br search '<record-id>' --all --json");
+    expect(skill?.content).toContain('Add a commit hash only after that commit exists');
+    expect(skill?.content).toContain('ask before `br init`');
     expect(existsSync(skill?.path ?? '')).toBe(true);
   });
 

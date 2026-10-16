@@ -86,6 +86,16 @@ schema. A completed interview that returns `needs-review` can be retried with
 `decision-promote-interview` or `/implement`. Normal-chat reminders are
 read-only and do not instruct agents to write records.
 
+For multi-round or delegated work, the bead is the work/evidence index: include
+the source spec and current record IDs in its description, then add verified
+code/test paths, test command, result and unknowns as a comment. Add a commit
+hash only after committing. Search closed issues with
+`br search '<record-id>' --all --json`. This is agent workflow, not automatic
+link creation. Do not supersede an accepted decision just to add an
+administrative bead link. The register remains the source of *why*, the bead of
+work status, and Git of code.
+Ask before `br init` in a repository without `.beads/`.
+
 ## Configuration
 
 By default the plugin is inert: it registers its ten tools and does nothing
