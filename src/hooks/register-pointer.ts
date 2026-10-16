@@ -1,4 +1,5 @@
-import { isEnabled } from '../config.js';
+import { loadConfig } from '../config.js';
+import { appendActivationLog, registerExists } from '../log.js';
 import { pointerAlreadyPresent, REGISTER_POINTER } from '../prompts/register-pointer.js';
 
 /**
@@ -10,14 +11,22 @@ import { pointerAlreadyPresent, REGISTER_POINTER } from '../prompts/register-poi
  */
 export function createSystemTransformHook() {
   return async (
-    _input: { sessionID?: string; model?: unknown },
+    input: { sessionID?: string; model?: unknown },
     output: { system: string[] },
   ): Promise<void> => {
     try {
-      if (!isEnabled(process.cwd())) return;
+      const cwd = process.cwd();
+      const config = loadConfig(cwd);
+      if (!config.enabled) return;
+      // Only speak when the register actually exists — see the note in
+      // createRegisterPointerHandler for why this guard matters.
+      if (!registerExists(cwd)) return;
       if (!Array.isArray(output?.system)) return;
       if (pointerAlreadyPresent(output.system)) return;
       output.system.push(REGISTER_POINTER);
+      if (config.log) {
+        appendActivationLog(cwd, `pointer injected session=${input.sessionID ?? 'unknown'}`);
+      }
     } catch {
       // Never break the host on injection failure.
     }

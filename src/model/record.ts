@@ -110,6 +110,9 @@ export const ConstraintRecordSchema = createRecordSchema('CONSTRAINT');
 export const AssumptionRecordSchema = createRecordSchema('ASSUMPTION')
   .extend({
     needed_to_close: z.string().min(1, 'needed_to_close is required'),
+    // The outcome once needed_to_close has been satisfied. Without it an
+    // assumption has a question but never an answer.
+    outcome: z.enum(['verified', 'refuted']).optional(),
   })
   .strict();
 export const DecRecordSchema = createRecordSchema('DEC')
@@ -158,6 +161,7 @@ export const AddRecordInputSchema = z.discriminatedUnion('type', [
       ...BaseAddInputFields,
       type: z.literal('ASSUMPTION'),
       needed_to_close: z.string().min(1, 'needed_to_close is required'),
+      outcome: z.enum(['verified', 'refuted']).optional(),
     })
     .strict(),
   z

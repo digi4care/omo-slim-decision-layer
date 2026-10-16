@@ -92,6 +92,64 @@ describe('tools', () => {
     expect(register.records[0].status_reason).toBe('Not needed');
   });
 
+  test('decision-close records an outcome on a proposed assumption', async () => {
+    const bodyPath = path.join(tmpDir, 'assumption.yaml');
+    fs.writeFileSync(bodyPath, dump({ needed_to_close: 'Run the interview' }), 'utf-8');
+    await tools['decision-add'].execute(
+      { type: 'ASSUMPTION', title: 'Agents read the register', body: 'assumption.yaml' },
+      ctx,
+    );
+
+    const result = await tools['decision-close'].execute(
+      { id: 'ASSUMPTION-0001', outcome: 'verified', reason: 'Cited DEC-0002' },
+      ctx,
+    );
+    expect(result).toContain('Closed ASSUMPTION-0001 as verified');
+
+    const register = readRegister(registerPath);
+    const record = register.records[0];
+    expect(record.status).toBe('accepted');
+    expect(record.type === 'ASSUMPTION' && record.outcome).toBe('verified');
+    expect(record.status_reason).toBe('Cited DEC-0002');
+  });
+
+  test('decision-close refuses a second outcome', async () => {
+    const bodyPath = path.join(tmpDir, 'assumption.yaml');
+    fs.writeFileSync(bodyPath, dump({ needed_to_close: 'x' }), 'utf-8');
+    await tools['decision-add'].execute(
+      { type: 'ASSUMPTION', title: 'A', body: 'assumption.yaml' },
+      ctx,
+    );
+    await tools['decision-close'].execute({ id: 'ASSUMPTION-0001', outcome: 'verified' }, ctx);
+    const again = await tools['decision-close'].execute(
+      { id: 'ASSUMPTION-0001', outcome: 'refuted' },
+      ctx,
+    );
+    // The status guard fires first: a closed assumption is accepted, so it can
+    // no longer be closed at all.
+    expect(again).toContain('only proposed assumptions can be closed');
+  });
+
+  test('decision-close refuses a non-assumption', async () => {
+    await tools['decision-add'].execute({ type: 'REQ', title: 'R' }, ctx);
+    const result = await tools['decision-close'].execute(
+      { id: 'REQ-0001', outcome: 'verified' },
+      ctx,
+    );
+    expect(result).toContain('is not an assumption');
+  });
+
+  test('decision-close omits outcome when absent', async () => {
+    const bodyPath = path.join(tmpDir, 'assumption.yaml');
+    fs.writeFileSync(bodyPath, dump({ needed_to_close: 'x' }), 'utf-8');
+    await tools['decision-add'].execute(
+      { type: 'ASSUMPTION', title: 'A', body: 'assumption.yaml' },
+      ctx,
+    );
+    const raw = fs.readFileSync(registerPath, 'utf-8');
+    expect(raw).not.toContain('outcome:');
+  });
+
   test('decision-list filters', async () => {
     await tools['decision-add'].execute({ type: 'REQ', title: 'R1' }, ctx);
     await tools['decision-add'].execute({ type: 'REQ', title: 'R2' }, ctx);
@@ -317,8 +375,9 @@ describe('decision-init', () => {
     expect(register.records).toHaveLength(1);
   });
 
-  test('nine tools are exported including decision-init', () => {
-    expect(Object.keys(tools)).toHaveLength(9);
+  test('ten tools are exported including decision-init and decision-close', () => {
+    expect(Object.keys(tools)).toHaveLength(10);
     expect(Object.keys(tools)).toContain('decision-init');
+    expect(Object.keys(tools)).toContain('decision-close');
   });
 });

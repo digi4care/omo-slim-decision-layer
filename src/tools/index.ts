@@ -19,6 +19,7 @@ import {
   rejectRecord,
   supersedeRecord,
   validateRegisterFile,
+  writeRegister,
 } from '../register/register.js';
 import {
   resolveProjectRoot,
@@ -207,6 +208,40 @@ export function createDecisionTools(): Record<string, ToolDefinition> {
           args.reason as string | undefined,
         );
         return `Superseded ${args.id} with ${record.id}`;
+      },
+    ),
+
+    'decision-close': makeTool(
+      'Close an assumption with an outcome (verified | refuted)',
+      {
+        id: z.string(),
+        outcome: z.enum(['verified', 'refuted']),
+        reason: z.string().optional().describe('Why this outcome was reached'),
+      },
+      async (args, ctx) => {
+        const root = resolveProjectRoot(ctx);
+        const registerPath = resolveRegisterPath(root);
+        const register = readRegister(registerPath);
+        const record = register.records.find((r) => r.id === args.id);
+        if (!record) {
+          return `Record ${args.id} not found`;
+        }
+        if (record.type !== 'ASSUMPTION') {
+          return `Record ${args.id} is not an assumption`;
+        }
+        if (record.status !== 'proposed') {
+          return `Assumption ${args.id} is ${record.status}; only proposed assumptions can be closed`;
+        }
+        if (record.outcome !== undefined) {
+          return `Assumption ${args.id} already has outcome: ${record.outcome}`;
+        }
+        record.outcome = args.outcome as 'verified' | 'refuted';
+        record.status = 'accepted';
+        if (args.reason) {
+          record.status_reason = args.reason as string;
+        }
+        writeRegister(registerPath, register);
+        return `Closed ${record.id} as ${args.outcome}${args.reason ? ` — ${args.reason}` : ''}`;
       },
     ),
 

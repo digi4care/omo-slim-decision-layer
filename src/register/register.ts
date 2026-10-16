@@ -66,11 +66,12 @@ const RecordKeyOrder: Record<string, number> = {
   status_reason: 8,
   links: 9,
   needed_to_close: 10,
-  decision: 11,
+  outcome: 11,
+  decision: 12,
   alternatives_rejected: 12,
-  consequences: 13,
-  context: 14,
-  meta: 15,
+  consequences: 14,
+  context: 15,
+  meta: 16,
 };
 
 const LinkKeyOrder: Record<string, number> = {
@@ -139,6 +140,9 @@ function normalizeRecord(record: DecisionRecord): Record<string, unknown> {
   }
   if (base.meta === undefined) {
     delete base.meta;
+  }
+  if (base.outcome === undefined) {
+    delete base.outcome;
   }
   if (Array.isArray(base.links)) {
     base.links = base.links.map((link) =>
@@ -286,7 +290,12 @@ export function addRecord(filePath: string, input: AddRecordInput): DecisionReco
       record = { ...base, type: input.type };
       break;
     case 'ASSUMPTION':
-      record = { ...base, type: input.type, needed_to_close: input.needed_to_close };
+      record = {
+        ...base,
+        type: input.type,
+        needed_to_close: input.needed_to_close,
+        outcome: input.outcome,
+      };
       break;
     case 'DEC':
       record = {
@@ -385,6 +394,7 @@ export function supersedeRecord(
         ...base,
         type: newRecordInput.type,
         needed_to_close: newRecordInput.needed_to_close,
+        outcome: newRecordInput.outcome,
       };
       break;
     case 'DEC':

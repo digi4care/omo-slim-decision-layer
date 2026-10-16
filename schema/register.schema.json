@@ -310,6 +310,10 @@
               "needed_to_close": {
                 "type": "string",
                 "minLength": 1
+              },
+              "outcome": {
+                "type": "string",
+                "enum": ["verified", "refuted"]
               }
             },
             "required": [

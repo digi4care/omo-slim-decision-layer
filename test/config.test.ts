@@ -33,6 +33,30 @@ describe('loadConfig', () => {
     const config = loadConfig(root, globalPath);
     expect(config.enabled).toBe(false);
     expect(config.registerPath).toBe('.decisions/register.yaml');
+    expect(config.log).toBe(false);
+  });
+
+  it('reads log from the global config so debugging needs no repo edits', () => {
+    const root = scratch();
+    const globalPath = write(
+      scratch(),
+      'opencode.jsonc',
+      JSON.stringify({ 'decision-layer': { enabled: true, log: true } }),
+    );
+    const config = loadConfig(root, globalPath);
+    expect(config.log).toBe(true);
+    expect(config.enabled).toBe(true);
+  });
+
+  it('lets the project config switch logging back off', () => {
+    const root = scratch();
+    const globalPath = write(
+      scratch(),
+      'opencode.jsonc',
+      JSON.stringify({ 'decision-layer': { log: true } }),
+    );
+    write(root, 'opencode.jsonc', JSON.stringify({ 'decision-layer': { log: false } }));
+    expect(loadConfig(root, globalPath).log).toBe(false);
   });
 
   it('reads enabled from the global opencode config', () => {

@@ -1,0 +1,81 @@
+schema_version: "1.0"
+workspace:
+  id: omo-slim-decision-layer
+  title: omo-slim-decision-layer plugin
+  owner: Chris Engelhard
+  change_authority: owner
+records:
+  - schema_version: "1.0"
+    id: CONSTRAINT-0001
+    type: CONSTRAINT
+    title: "Discipline is opt-in, not ambient: enabled defaults to false and a normal chat triggers nothing"
+    status: accepted
+    owner: Chris Engelhard
+    change_authority: owner
+    supersedes: []
+    links: []
+    context: "The original complaint was that the plugin is present but unused without /interview. The fix is a flag, not more injection: while it is off the plugin registers its nine tools and does nothing else."
+  - schema_version: "1.0"
+    id: ASSUMPTION-0001
+    type: ASSUMPTION
+    title: An agent consults the register before deciding
+    status: accepted
+    owner: Chris Engelhard
+    change_authority: owner
+    supersedes: []
+    status_reason: "Geverifieerd op 2026-10-15 in dit repo: bij een /interview over config-precedence riep de agent decision-list aan, vond DEC-0002 (accepted) en begon niet opnieuw maar verwees ernaar. De pointer bereikte de context EN werd gebruikt — tekst was aanwezig en gedrag volgde."
+    links: []
+    needed_to_close: Run one /interview in directus-headless on a topic already present in the register — the FK-cascade for parent deletion is the control — and observe whether the agent cites the existing record or mints a duplicate beside it. Closes on observed behaviour, not on reasoning.
+    outcome: verified
+    context: Nothing on this machine shows that an agent consults the register before deciding. The one project that has a register got its records from interviews and governance work, not from consulting earlier decisions. If the pointer is too weak, the read-route needs a stronger carrier.
+  - schema_version: "1.0"
+    id: DEC-0001
+    type: DEC
+    title: The always-available reminder is fixed text, never register contents
+    status: accepted
+    owner: Chris Engelhard
+    change_authority: owner
+    supersedes: []
+    links: []
+    alternatives_rejected:
+      - alternative: Always-on discipline, no flag
+        rejected_because: "The original complaint was that the plugin is present but unused without /interview. Always-on discipline recreates that in a different place: it writes noise instead of being silent. A register that always fires is a register nobody maintains."
+      - alternative: Per-repo flag set by the plugin on first use
+        rejected_because: A plugin that creates its own configuration on first run is a second write-source, which is exactly the failure the register exists to prevent.
+    decision: The plugin stays inert by default. Enabling it turns on the interview discipline, the self-registered skill on v2, and a fixed-text reminder in the system prompt. Nothing fires in a normal chat while the flag is off.
+    consequences: Users must set the flag explicitly. The nine tools keep working when it is off, so the plugin never becomes a blocker. The cost is that a new user installs the plugin and sees nothing happen until they read the README.
+    context: Written after the analysis in the research directory, and after the Oracle gate found that a flag defaulting to false and failing silently is undiscoverable. That is why a malformed config now warns.
+  - schema_version: "1.0"
+    id: DEC-0002
+    type: DEC
+    title: Config merges per key, not per file; enabled is user-scope, registerPath is repository-scope
+    status: accepted
+    owner: Chris Engelhard
+    change_authority: owner
+    supersedes: []
+    links: []
+    alternatives_rejected:
+      - alternative: Merge per file
+        rejected_because: A project file that only sets registerPath would erase an enabled flag inherited from the global config. The whole point of a global default is that a project can override one key without restating the other.
+      - alternative: Let registerPath come from the global config too
+        rejected_because: A register path is a property of the repository. Reading it globally applies one path to every repo on the machine, which is wrong for any project that keeps its register somewhere else.
+    decision: The two config keys are merged per key, not per file, and they have different scopes. enabled is user-level and may be set globally. registerPath is repository-level and is never read from the global config.
+    consequences: "Three sources with a documented order: project opencode.json(c), global opencode.jsonc, and the deprecated .opencode/decision-layer.json. OPENCODE_CONFIG overrides the config root. A malformed file warns instead of failing silently, because silent failure is the worst symptom of a flag that defaults to off."
+    context: The Oracle gate found that registerPath was travelling out of the global config. The fix is a scope rule, not a merge rule.
+  - schema_version: "1.0"
+    id: DEC-0003
+    type: DEC
+    title: Tool descriptions are neutral; the skill and the reminder carry the discipline
+    status: accepted
+    owner: Chris Engelhard
+    change_authority: owner
+    supersedes: []
+    links: []
+    alternatives_rejected:
+      - alternative: Keep the discipline in the descriptions
+        rejected_because: "They were unconditional, which contradicts enabled: false. And on v1 the tool hook is registered before a session exists, so the flag cannot gate them there. A flag meaning one thing on v1 and another on v2 means nothing."
+      - alternative: Gate the descriptions on v1 using process.cwd()
+        rejected_because: The same proxy the system-transform hook already accepts. But a cwd guess on descriptions makes the tool surface collapse the moment someone starts OpenCode from a subdirectory. The revert is the safer asymmetry.
+    decision: The nine tool descriptions are neutral. They say what each tool does and nothing about when to use it. The discipline is carried by the skill and by the prompt reminder.
+    consequences: The tools are always registered, so capability is present while guidance is opt-in. That is a decision, not an accident, and it is recorded as such.
+    context: Commit 6ed2d37 put the discipline in the descriptions; this record is the reversal and the reason for it.

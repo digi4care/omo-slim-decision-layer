@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { loadConfig } from '../config.js';
+import { appendActivationLog, registerExists } from '../log.js';
 import { DECISION_DISCIPLINE_PROMPT } from '../prompts/decision-discipline.js';
 import { pointerAlreadyPresent, REGISTER_POINTER } from '../prompts/register-pointer.js';
 import { loadDecisionSkill } from '../skills/register.js';
@@ -50,16 +51,32 @@ export interface V2SessionContextEvent {
  * `experimental.chat.system.transform` output. Only the trailing state is
  * touched; the reminder is a fixed string, so the bytes never change and the
  * provider prompt cache stays intact.
+ *
+ * The reminder says "this project keeps a decision register", so it must only
+ * fire when that is actually true. Without the existence check a project
+ * without a register is told it has one, and an obedient agent responds by
+ * creating one — nine records appeared in a project nobody asked to track.
  */
-export function createRegisterPointerHandler(enabled: boolean) {
+export function createRegisterPointerHandler(
+  enabled: boolean,
+  registerExists: () => boolean = () => false,
+  onActivate?: (sessionID: string) => void,
+) {
   return async (event: unknown): Promise<void> => {
     try {
       if (!enabled) return;
       if (!isRecord(event)) return;
+      if (!registerExists()) return;
       const system = (event as unknown as V2SessionContextEvent).system;
       if (!Array.isArray(system)) return;
       if (pointerAlreadyPresent(system.map((s) => s?.text ?? ''))) return;
       system.push({ type: 'text', text: REGISTER_POINTER });
+      const sessionID = (event as unknown as V2SessionContextEvent).sessionID;
+      try {
+        onActivate?.(sessionID);
+      } catch {
+        // Logging must never break the hook.
+      }
     } catch {
       // Never break the host on injection failure.
     }
@@ -74,8 +91,11 @@ export function createV2Setup() {
   return async (ctx: V2Context): Promise<void> => {
     const projectDir = ctx.location.directory;
     let enabled = false;
+    let shouldLog = false;
     try {
-      enabled = loadConfig(projectDir).enabled;
+      const config = loadConfig(projectDir);
+      enabled = config.enabled;
+      shouldLog = config.log;
     } catch {
       // A broken config must never stop the tools from loading.
     }
@@ -122,7 +142,17 @@ export function createV2Setup() {
       console.warn('[decision-layer] skill registration failed:', error);
     }
 
-    await ctx.session.hook('context', createRegisterPointerHandler(enabled));
+    await ctx.session.hook(
+      'context',
+      createRegisterPointerHandler(
+        enabled,
+        () => registerExists(projectDir),
+        (sessionID) => {
+          if (!shouldLog) return;
+          appendActivationLog(projectDir, `pointer injected session=${sessionID}`);
+        },
+      ),
+    );
 
     await ctx.session.hook('prompt', async (event: unknown) => {
       try {

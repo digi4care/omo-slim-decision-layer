@@ -24,6 +24,9 @@ The register at `.decisions/register.yaml` is the single source of truth for
    and create the new record. History stays append-only.
 5. **Assumptions are records.** Anything you cannot verify is an ASSUMPTION
    record with `needed_to_close` — not a plausible sentence in prose.
+   When that question is answered, close it with `decision-close`
+   (`verified` or `refuted`). An open assumption is an open question in the
+   register; a closed one is settled.
 6. **Interviews end in records.** When an `/interview` closes, record the
    outcome: the problem (REQ), what is fixed (CONSTRAINT), unverified
    assumptions (ASSUMPTION), and the decision (DEC with alternatives and

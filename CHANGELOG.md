@@ -6,6 +6,29 @@ gets a version number and a `.tgz` in `release/`.
 
 ## [Unreleased]
 
+### Fixed
+
+- **The prompt reminder no longer claims a register that does not exist.** It
+  said "this project keeps a decision register" unconditionally, so in any
+  register-less project it told an agent that one existed and an obedient agent
+  created one — nine records appeared in a project nobody asked to track. The
+  reminder now fires only when the register file is actually on disk, and
+  applies to both the v1 and v2 injection paths. Found by running the plugin
+  across every project on the machine.
+
+### Added
+
+- **`log` config flag, default off.** Appends one line per session to
+  `.decisions/activation.log` when the reminder fires. Debugging aid; readable
+  from either config level, so you can switch it on globally while chasing a
+  problem without touching every repo. Gitignore the log file.
+
+- **`decision-close` and the `outcome` field.** An `ASSUMPTION` carried a question
+  in `needed_to_close` and no field for the answer, so the lifecycle had a start
+  and no end. `decision-close` records `verified` or `refuted` with an optional
+  reason and moves the record to `accepted`. Found by dogfooding the plugin on
+  its own repository.
+
 ### Added
 
 - **`enabled` flag.** The plugin is inert by default: it registers its nine tools

@@ -6,6 +6,8 @@ import { z } from 'zod';
 export const ConfigSchema = z.object({
   enabled: z.boolean().default(false),
   registerPath: z.string().default('.decisions/register.yaml'),
+  /** Append one line per session to `.decisions/activation.log`. Dev only. */
+  log: z.boolean().default(false),
 });
 
 export type DecisionLayerConfig = z.infer<typeof ConfigSchema>;
@@ -101,6 +103,7 @@ function readConfigFile(filePath: string): unknown {
 export interface DecisionLayerRawConfig {
   enabled?: boolean;
   registerPath?: string;
+  log?: boolean;
 }
 
 function defaultGlobalConfigPath(): string {
@@ -132,6 +135,10 @@ function collectRawConfig(projectRoot: string, globalConfigPath: string): Decisi
   const apply = (source: unknown, scope: 'project' | 'global'): void => {
     if (!isRecord(source)) return;
     if (typeof source.enabled === 'boolean') merged.enabled = source.enabled;
+    // `log` is a debugging aid, not a project property: like `enabled` it may
+    // come from either level, so you can switch it on globally while chasing
+    // a problem without touching every repository.
+    if (typeof source.log === 'boolean') merged.log = source.log;
     if (
       scope === 'project' &&
       typeof source.registerPath === 'string' &&
@@ -165,6 +172,7 @@ export function loadConfig(
   return ConfigSchema.parse({
     enabled: raw.enabled ?? false,
     registerPath: raw.registerPath ?? DEFAULT_REGISTER_PATH,
+    log: raw.log ?? false,
   });
 }
 

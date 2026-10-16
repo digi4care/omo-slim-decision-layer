@@ -14,6 +14,9 @@ Built as a companion plugin for
 - **Typed decision records** — `REQ` (requirement), `CONSTRAINT`
   (non-negotiable), `ASSUMPTION` (unverified, with `needed_to_close`) and `DEC`
   (decision with rejected alternatives and consequences).
+- **Closed assumptions** — an `ASSUMPTION` has a question in `needed_to_close`
+  but no field for the answer. `decision-close` supplies it: `verified` or
+  `refuted`, plus an optional reason, moving the record to `accepted`.
 - **Single source of truth** — one YAML register at `.decisions/register.yaml`.
   All writes go through the plugin's tools; the generated markdown view is
   disposable and never authoritative.
@@ -30,15 +33,20 @@ Built as a companion plugin for
   v1 has no `skill.transform`; installing the skill to
   `~/.config/opencode/skills/decision-layer/` is not yet implemented.
 
-## Compatibility
+- **Availability** — the reminder only fires when `.decisions/register.yaml`
+  actually exists on disk, so it never claims a register that isn't there. Run
+  `decision-init` once per project to turn it on for that project.
+- **Compatibility**
 
 One package, two registration paths, sharing the same register and tool logic:
 
 - **v1** (`@opencode-ai/plugin` 1.x): the default export provides a v1 `server`
-  that registers the nine tools and the `command.execute.before` hook.
+  that registers the nine tools, the `command.execute.before` hook, and the
+  prompt reminder via `experimental.chat.system.transform`.
 - **v2** (`@opencode/plugin` 2.x): the same default export also provides a v2
-  `setup` that registers the tools via `ctx.tool.transform` and injects the
-  prompt via `ctx.session.hook('prompt')`.
+  `setup` that registers the tools via `ctx.tool.transform`, injects the
+  prompt via `ctx.session.hook('prompt')`, and the reminder via
+  `ctx.session.hook('context')`.
 
 ## Agent tools
 
@@ -55,6 +63,7 @@ fetched on demand through `decision-list`.
 | `decision-ratify` | `proposed` → `accepted` — owner act, never self-invoked |
 | `decision-reject` | `proposed` → `rejected` |
 | `decision-supersede` | Replace a record, preserving history |
+| `decision-close` | Close an `ASSUMPTION` with `verified` or `refuted` |
 | `decision-list` | List records, filter by status/type |
 | `decision-query` | Orphans, or "what links to this record" |
 | `decision-validate` | Validate the register against the schema |
@@ -75,15 +84,16 @@ discipline, and — on v2 — the self-registered skill.
 
 Two sources, merged **per key**, not per file:
 
-| Source | Key it contributes |
+| Source | Keys it contributes |
 |---|---|
-| `<project>/opencode.json(c)` | both keys |
-| `~/.config/opencode/opencode.jsonc` | `enabled` only |
-| `<project>/.opencode/decision-layer.json` (deprecated) | both keys |
+| `<project>/opencode.json(c)` | all three |
+| `~/.config/opencode/opencode.jsonc` | `enabled`, `log` |
+| `<project>/.opencode/decision-layer.json` (deprecated) | all three |
 
 | Key | Meaning | Scope |
 |---|---|---|
 | `enabled` | turns the guidance on | **user** — safe to set globally |
+| `log` | append one line per session to `.decisions/activation.log` | **user** — a debugging aid, off by default; gitignore the log |
 | `registerPath` | where the register lives | **repository** — never read from the global file, or one path would apply to every repo on the machine |
 
 Because precedence is per key, a project file that sets only `registerPath`
