@@ -16,14 +16,16 @@ function contextEvent() {
 }
 
 describe('REGISTER_POINTER', () => {
-  it('names the register and the two tools that matter', () => {
+  it('names the register and remains read-only', () => {
     expect(REGISTER_POINTER).toContain('decision-list');
-    expect(REGISTER_POINTER).toContain('decision-add');
+    expect(REGISTER_POINTER).toContain(
+      'Do not change or add register records unless the user asks',
+    );
   });
 
-  it('states the two owner-only rules', () => {
-    expect(REGISTER_POINTER).toContain('Never edit the register file by hand');
-    expect(REGISTER_POINTER).toContain('unless the user explicitly asks');
+  it('does not prescribe write tools in ambient prompt', () => {
+    expect(REGISTER_POINTER).not.toContain('decision-add');
+    expect(REGISTER_POINTER).toContain('unless the user asks');
   });
 
   it('carries no record counts, ids or interpolated paths', () => {
@@ -169,7 +171,7 @@ describe('tool descriptions', () => {
 
   it('still names the tools, including decision-close', () => {
     const keys = Object.keys(createDecisionTools());
-    expect(keys).toHaveLength(10);
+    expect(keys).toHaveLength(11);
     expect(keys).toContain('decision-close');
   });
 });

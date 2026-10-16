@@ -6,6 +6,15 @@ workspace:
   change_authority: owner
 records:
   - schema_version: "1.0"
+    id: REQ-0001
+    type: REQ
+    title: Afgeronde interviews leveren controleerbare voorgestelde decision-records en spec-gebonden agent-handoffs op
+    status: proposed
+    owner: Chris Engelhard
+    change_authority: owner
+    supersedes: []
+    links: []
+  - schema_version: "1.0"
     id: CONSTRAINT-0001
     type: CONSTRAINT
     title: "Discipline is opt-in, not ambient: enabled defaults to false and a normal chat triggers nothing"
@@ -28,6 +37,17 @@ records:
     needed_to_close: Run one /interview in directus-headless on a topic already present in the register — the FK-cascade for parent deletion is the control — and observe whether the agent cites the existing record or mints a duplicate beside it. Closes on observed behaviour, not on reasoning.
     outcome: verified
     context: Nothing on this machine shows that an agent consults the register before deciding. The one project that has a register got its records from interviews and governance work, not from consulting earlier decisions. If the pointer is too weak, the read-route needs a stronger carrier.
+  - schema_version: "1.0"
+    id: ASSUMPTION-0002
+    type: ASSUMPTION
+    title: Interview-host en decision-layer delen de JS-realm voor de optionele completion-bridge
+    status: proposed
+    owner: Chris Engelhard
+    change_authority: owner
+    supersedes: []
+    links: []
+    needed_to_close: Laad lokaal gebouwde versies van beide plugins in dezelfde OpenCode-host en rond een interview met expliciete getypeerde kandidaten af. Observeer of de completion-bridge werkelijk wordt gevonden, records via decision-layer worden toegevoegd en /implement echte IDs of een eerlijke waarschuwing ontvangt. Herhaal voor de ondersteunde hostpaden voordat betrouwbaarheid wordt geclaimd.
+    context: De koppeling gebruikt een versioned globalThis Symbol tussen twee afzonderlijke plugins; tests oefenen deze aanroep binnen één JS-realm, niet in een echte geladen host.
   - schema_version: "1.0"
     id: DEC-0001
     type: DEC
@@ -79,3 +99,22 @@ records:
     decision: The nine tool descriptions are neutral. They say what each tool does and nothing about when to use it. The discipline is carried by the skill and by the prompt reminder.
     consequences: The tools are always registered, so capability is present while guidance is opt-in. That is a decision, not an accident, and it is recorded as such.
     context: Commit 6ed2d37 put the discipline in the descriptions; this record is the reversal and the reason for it.
+  - schema_version: "1.0"
+    id: DEC-0004
+    type: DEC
+    title: Interviews promoveren na afronding uitsluitend onderbouwde voorstellen met spec-gebonden handoff
+    status: proposed
+    owner: Chris Engelhard
+    change_authority: owner
+    supersedes: []
+    links: []
+    alternatives_rejected:
+      - alternative: Spec pas afronden nadat registratie slaagt
+        rejected_because: Een register- of toolfout mag de voltooide spec niet blokkeren.
+      - alternative: Alle agenttaken in het project automatisch een schrijfhandoff geven
+        rejected_because: Gewone gesprekken en ongerelateerd agentwerk blijven buiten de expliciet gekozen workflow.
+      - alternative: Ontbrekend register automatisch initialiseren of conflicterende records automatisch superseden
+        rejected_because: Initialisatie en wijziging van bestaande beslissingen vragen expliciete beoordeling.
+    decision: Maak een expliciete post-completion registratie met voorgestelde records uit onderbouwde, getypeerde kandidaten en een handoff uitsluitend voor /implement en agents die aan die spec werken. Meld onvolledigheid of fouten zichtbaar en laat implementatie met waarschuwing doorgaan.
+    consequences: Registratie krijgt een afzonderlijk resultaat met herbruikbare IDs en herstelpad; het project moet een werkende koppeling tussen interview-host en decision-layer bewijzen. Ambigue inhoud blijft needs-review en bestaande records blijven onaangeroerd.
+    context: "Interview 2026-10-16: voltooiing van de markdown spec mag niet worden verward met geslaagde registratie. De gebruiker koos registratie ná afronding, een niet-blokkerende /implement-handoff, expliciete initialisatie bij ontbrekend register en geen automatische supersede bij gewijzigde specs."

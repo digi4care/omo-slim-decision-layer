@@ -24,9 +24,12 @@ Built as a companion plugin for
   superseded`. Supersede instead of edit: history stays append-only.
 - **Owner ratification** — agents draft records; only the owner ratifies.
   This is a convention enforced by discipline, not by a technical gate.
-- **Interview integration** — when oh-my-opencode-slim's `/interview` command
-  runs, the plugin injects a discipline prompt so a closed interview ends as
-  records in the register instead of loose markdown.
+- **Interview integration (opt-in)** — a completed interview can be promoted
+  only from explicit typed `decision-record-proposals` YAML inside `## Current
+  spec`. The post-completion bridge requires a compatible interview host in the
+  same JavaScript realm; this integration has not yet been live-verified.
+  Missing registers and other unresolved conflicts return `needs-review`; the
+  plugin never initializes a register or ratifies/rejects proposals.
 - **Skill availability** — on OpenCode v2 the plugin registers its own
   `skills/decision-layer/SKILL.md` at startup via `ctx.skill.transform`, so the
   discipline is loaded automatically without a separate install step. OpenCode
@@ -41,7 +44,7 @@ Built as a companion plugin for
 One package, two registration paths, sharing the same register and tool logic:
 
 - **v1** (`@opencode-ai/plugin` 1.x): the default export provides a v1 `server`
-  that registers the nine tools, the `command.execute.before` hook, and the
+  that registers the ten tools, the `command.execute.before` hook, and the
   prompt reminder via `experimental.chat.system.transform`.
 - **v2** (`@opencode/plugin` 2.x): the same default export also provides a v2
   `setup` that registers the tools via `ctx.tool.transform`, injects the
@@ -50,7 +53,7 @@ One package, two registration paths, sharing the same register and tool logic:
 
 ## Agent tools
 
-The nine tools carry no embedded discipline of their own. The discipline is
+The ten tools carry no embedded discipline of their own. The discipline is
 carried by the skill and by a short reminder in the system prompt — the
 reminder is fixed text, never register contents, because injecting changing bytes
 on every request would invalidate the provider prompt cache. The register is
@@ -68,10 +71,17 @@ fetched on demand through `decision-list`.
 | `decision-query` | Orphans, or "what links to this record" |
 | `decision-validate` | Validate the register against the schema |
 | `decision-view` | Regenerate the markdown view |
+| `decision-promote-interview` | Retry promotion from a completed spec; only explicit typed proposals in `## Current spec` are considered |
+
+Proposal blocks use a fenced `decision-record-proposals` YAML array with stable
+`key`, `type`, `title`, and `context`; type-specific fields follow the register
+schema. A completed interview that returns `needs-review` can be retried with
+`decision-promote-interview` or `/implement`. Normal-chat reminders are
+read-only and do not instruct agents to write records.
 
 ## Configuration
 
-By default the plugin is inert: it registers its nine tools and does nothing
+By default the plugin is inert: it registers its ten tools and does nothing
 else. Enabling it turns on the always-available reminder, the interview
 discipline, and — on v2 — the self-registered skill.
 

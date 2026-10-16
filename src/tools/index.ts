@@ -21,6 +21,7 @@ import {
   validateRegisterFile,
   writeRegister,
 } from '../register/register.js';
+import { promoteInterview } from './interview-promotion.js';
 import {
   resolveProjectRoot,
   resolveRegisterPath,
@@ -131,6 +132,18 @@ function makeTool<TArgs extends Record<string, unknown>>(
 
 export function createDecisionTools(): Record<string, ToolDefinition> {
   return {
+    'decision-promote-interview': makeTool(
+      'Promote explicit typed proposals from a completed interview spec; never ratifies records',
+      { specPath: z.string().min(1) },
+      async (args, ctx) =>
+        JSON.stringify(
+          await promoteInterview({
+            projectRoot: resolveProjectRoot(ctx),
+            specPath: args.specPath as string,
+            sessionID: String((ctx as unknown as { sessionID?: string }).sessionID ?? ''),
+          }),
+        ),
+    ),
     'decision-add': makeTool(
       'Add a proposed decision record to the register',
       {

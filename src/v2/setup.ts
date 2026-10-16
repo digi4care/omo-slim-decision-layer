@@ -5,6 +5,7 @@ import { DECISION_DISCIPLINE_PROMPT } from '../prompts/decision-discipline.js';
 import { pointerAlreadyPresent, REGISTER_POINTER } from '../prompts/register-pointer.js';
 import { loadDecisionSkill } from '../skills/register.js';
 import { createDecisionTools } from '../tools/index.js';
+import { INTERVIEW_PROMOTION_SYMBOL, promoteInterview } from '../tools/interview-promotion.js';
 
 /**
  * v2 registration path, next to the v1 `server` export.
@@ -90,6 +91,17 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 export function createV2Setup() {
   return async (ctx: V2Context): Promise<void> => {
     const projectDir = ctx.location.directory;
+    (globalThis as Record<PropertyKey, unknown>)[INTERVIEW_PROMOTION_SYMBOL] = {
+      promote: (input: { projectRoot: string; specPath: string; sessionID: string }) =>
+        input.projectRoot === projectDir
+          ? promoteInterview(input)
+          : Promise.resolve({
+              status: 'needs-review' as const,
+              reusedIDs: [],
+              addedIDs: [],
+              openQuestions: ['Project root does not match configured project'],
+            }),
+    };
     let enabled = false;
     let shouldLog = false;
     try {

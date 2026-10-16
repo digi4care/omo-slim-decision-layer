@@ -375,8 +375,8 @@ describe('decision-init', () => {
     expect(register.records).toHaveLength(1);
   });
 
-  test('ten tools are exported including decision-init and decision-close', () => {
-    expect(Object.keys(tools)).toHaveLength(10);
+  test('eleven tools are exported including decision-promote-interview', () => {
+    expect(Object.keys(tools)).toHaveLength(11);
     expect(Object.keys(tools)).toContain('decision-init');
     expect(Object.keys(tools)).toContain('decision-close');
   });

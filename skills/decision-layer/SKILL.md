@@ -27,10 +27,26 @@ The register at `.decisions/register.yaml` is the single source of truth for
    When that question is answered, close it with `decision-close`
    (`verified` or `refuted`). An open assumption is an open question in the
    register; a closed one is settled.
-6. **Interviews end in records.** When an `/interview` closes, record the
-   outcome: the problem (REQ), what is fixed (CONSTRAINT), unverified
-   assumptions (ASSUMPTION), and the decision (DEC with alternatives and
-   consequences). Call `decision-add` yourself; the plugin only reminds you.
+6. **Interviews end in records.** For promotion, only explicit candidates in
+    the completed spec's `## Current spec` section are considered. Obtain user
+    confirmation before promotion. Use a fenced `decision-record-proposals`
+    YAML array; every entry has stable `key`, `type`, `title`, and `context`.
+    DEC entries also require `decision`, `consequences`, and
+    `alternatives_rejected`; ASSUMPTION entries require `needed_to_close`.
+    Example:
+    ```decision-record-proposals
+    - key: chosen-approach
+      type: DEC
+      title: Use bounded promotion
+      context: The interview established a need for explicit proposals.
+      decision: Promote only confirmed entries.
+      consequences: Entries remain proposed for owner review.
+      alternatives_rejected:
+        - alternative: Infer records from interview prose
+          rejected_because: Prose is ambiguous.
+    ```
+    Call `decision-promote-interview` with the completed spec path to retry
+    promotion; records are proposed, never ratified by promotion.
 7. **Work stays in beads.** Records never carry work status. Link to beads
    issues by id, never duplicate lifecycle state.
 

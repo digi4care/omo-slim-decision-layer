@@ -8,7 +8,7 @@
  *
  * The register's contents are fetched on demand through `decision-list`.
  */
-export const REGISTER_POINTER = `This project keeps a decision register. Before deciding, designing or changing behaviour, call \`decision-list\` (and \`decision-query\` when a record is named) to check what is already recorded. If the work surfaces a requirement, a non-negotiable, an unverified assumption or a decision, record it with \`decision-add\`. Never edit the register file by hand. Never call \`decision-ratify\` or \`decision-reject\` unless the user explicitly asks.`;
+export const REGISTER_POINTER = `This project keeps a decision register. Before deciding, designing or changing behaviour, call \`decision-list\` (and \`decision-query\` when a record is named) to check what is already recorded. Do not change or add register records unless the user asks.`;
 
 export function pointerAlreadyPresent(lines: string[]): boolean {
   return lines.some((line) => line.includes(REGISTER_POINTER));
