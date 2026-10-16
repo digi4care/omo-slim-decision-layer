@@ -6,56 +6,43 @@ gets a version number and a `.tgz` in `release/`.
 
 ## [Unreleased]
 
-### Fixed
-
-- **The prompt reminder no longer claims a register that does not exist.** It
-  said "this project keeps a decision register" unconditionally, so in any
-  register-less project it told an agent that one existed and an obedient agent
-  created one — nine records appeared in a project nobody asked to track. The
-  reminder now fires only when the register file is actually on disk, and
-  applies to both the v1 and v2 injection paths. Found by running the plugin
-  across every project on the machine.
+## [0.5.0] - 2026-10-16
 
 ### Added
 
-- **`log` config flag, default off.** Appends one line per session to
-  `.decisions/activation.log` when the reminder fires. Debugging aid; readable
-  from either config level, so you can switch it on globally while chasing a
-  problem without touching every repo. Gitignore the log file.
-
-- **`decision-close` and the `outcome` field.** An `ASSUMPTION` carried a question
-  in `needed_to_close` and no field for the answer, so the lifecycle had a start
-  and no end. `decision-close` records `verified` or `refuted` with an optional
-  reason and moves the record to `accepted`. Found by dogfooding the plugin on
-  its own repository.
-
-### Added
-
-- **`enabled` flag.** The plugin is inert by default: it registers its nine tools
-  and does nothing else. `"decision-layer": { "enabled": true }` turns on the
-  interview discipline, the self-registered skill, and a fixed-text reminder in
-  the system prompt telling the agent to consult the register before deciding.
-  Resolved from `<project>/opencode.json(c)` and
-  `~/.config/opencode/opencode.jsonc`, merged per key. `enabled` is a
-  user-level key and may be set globally; `registerPath` is repository-level and
-  is never read from the global file. `OPENCODE_CONFIG` overrides the config
-  root.
-- A config file that exists but cannot be parsed now logs a warning instead of
-  failing silently.
+- **Opt-in guidance.** `enabled` defaults to `false`; when enabled and the
+  register exists, a fixed-text pointer asks the agent to check existing
+  records before deciding. OpenCode v2 self-registers the decision-layer skill.
+  This is agent guidance, not a universal enforcement mechanism.
+- **Completed interview promotion.** `decision-promote-interview` reads explicit
+  typed proposals in a completed spec and registers them as `proposed`. An
+  optional completion bridge supports compatible OMO-slim hosts in the same
+  JavaScript realm; it never ratifies records or starts `/implement`.
+- **Assumption closure.** `decision-close` records a verified/refuted outcome
+  and optional reason on an `ASSUMPTION`, moving it to `accepted`.
+- **Optional delegation guard.** Project-only `requireBeadsForDelegation`, off
+  by default, requires `.beads/` for known `task`/`subagent` tool calls. It does
+  not gate every route to delegation.
+- **Debug logging.** `log`, off by default, appends activation lines under
+  `.decisions/activation.log`. Configuration is merged per key; `enabled` and
+  `log` may be set globally, while `registerPath` and the delegation guard are
+  project-only.
 
 ### Changed
 
-- The nine tool descriptions are neutral again. Carrying discipline in them
-  conflicts with `enabled: false` and cannot be gated on v1, where the tool
-  hook is registered before a session exists. The discipline is carried by the
-  skill and the prompt reminder instead.
+- Tool descriptions remain neutral; the skill and pointer carry the opt-in
+  discipline. The README now explains the OMO-slim workflow, owner review,
+  bead-based evidence convention, and all four configuration keys.
 
 ### Fixed
 
-- README now correctly distinguishes local plugin paths: OpenCode v1 needs
-  `.../dist/index.js`, while OpenCode v2 needs `.../dist` (the directory).
-  Using the file path in v2 logs `configured plugin path must be a directory`
-  and fails to load the plugin.
+- The pointer does not claim a register that is missing on disk.
+- Canonical registered project roots allow completion promotion across loaded
+  projects without accepting unknown roots. This does not guarantee strict
+  caller isolation when projects share a host.
+- Invalid config files warn instead of silently falling back to defaults.
+- README distinguishes local plugin paths: v1 loads `dist/index.js`, v2 loads
+  the `dist` directory.
 
 ## [0.4.0] - 2026-10-14
 
