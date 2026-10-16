@@ -23,6 +23,19 @@ describe('REGISTER_POINTER', () => {
     );
   });
 
+  it('guides an unfinished workflow to a recommended next action without claiming enforcement', () => {
+    expect(REGISTER_POINTER).toContain('concrete next actions with costs and a recommendation');
+    expect(REGISTER_POINTER).toContain('Continue already-authorized work');
+    expect(REGISTER_POINTER).toContain('Do not present this guidance as a technical gate');
+  });
+
+  it('pauses only dependent code for an unaccepted determining architecture choice', () => {
+    expect(REGISTER_POINTER).toContain('lacks an accepted decision record');
+    expect(REGISTER_POINTER).toContain('pause only dependent code changes');
+    expect(REGISTER_POINTER).toContain('continue independent work');
+    expect(REGISTER_POINTER).toContain('Never ratify yourself');
+  });
+
   it('does not prescribe write tools in ambient prompt', () => {
     expect(REGISTER_POINTER).not.toContain('decision-add');
     expect(REGISTER_POINTER).toContain('unless the user asks');

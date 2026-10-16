@@ -42,6 +42,8 @@ describe('loadDecisionSkill', () => {
     expect(skill).toBeDefined();
     expect(skill?.id).toBe('decision-layer');
     expect(skill?.content).toContain('decision-layer discipline');
+    expect(skill?.content).toContain('Pause only dependent architecture work');
+    expect(skill?.content).toContain('not a universal technical gate');
     expect(existsSync(skill?.path ?? '')).toBe(true);
   });
 

@@ -15,6 +15,36 @@ records:
     supersedes: []
     links: []
   - schema_version: "1.0"
+    id: REQ-0002
+    type: REQ
+    title: Maak bron-tot-verificatie-traceability controleerbaar bij groot werk
+    status: proposed
+    owner: Chris Engelhard
+    change_authority: owner
+    supersedes: []
+    links: []
+    context: Chris koos in dit interview expliciet voor een herleidbare keten bron via besluit en bead/status naar code en test, met agenten als linkbeheerder en Chris als beoordelaar van bepalende beslissingen en uitzonderingen. De huidige registers hebben bij gecontroleerde records lege links en de projecten hebben geen beads-workspace; de keten is dus een gewenste nieuwe eis, niet bestaand gedrag of een duplicaat van REQ-0001 over interviewpromotie.
+    meta:
+      interview_source: /home/digi4care/projects/omo-slim-plugins/decision-layer/interview/analyseer-eerst-opnieuw-hoe-mijn-workflow-als-so-3cb4c2d5-ad42-471b-8ca0-f1e93b5d8e0f.md
+      interview_session_id: ses_ebb63e47dffeZGt76vX86OWIUC
+      interview_candidate_key: workflow-traceability-across-artifacts
+      interview_content_hash: d67b4838518990e5fe71e50edb0daac966e8c97179c2eb50405bd2f31862e766
+  - schema_version: "1.0"
+    id: REQ-0003
+    type: REQ
+    title: Gebruik dezelfde veilige projectroot voor decision-tools en interviewpromotie
+    status: proposed
+    owner: Chris Engelhard
+    change_authority: owner
+    supersedes: []
+    links: []
+    context: Chris bevestigde in dit interview dat hij letterlijk `Project root does not match configured project` zag. Na het interview is de code hersteld en zijn v1/v2-regressietests en een live directe toolproef uitgevoerd. Deze eis legt de gewenste veilige rootconsistentie vast; de automatische interview-completion-eventroute moet nog afzonderlijk live worden geverifieerd. Alleen geregistreerde canonieke projectroots zijn toegestaan; een onbekende repo blijft geweigerd, maar tussen twee geladen projecten is geen strikte callerisolatie mogelijk zonder extra hostidentiteit.
+    meta:
+      interview_source: /home/digi4care/projects/omo-slim-plugins/decision-layer/interview/analyseer-eerst-opnieuw-hoe-mijn-workflow-als-so-3cb4c2d5-ad42-471b-8ca0-f1e93b5d8e0f.md
+      interview_session_id: ses_ebb63e47dffeZGt76vX86OWIUC
+      interview_candidate_key: interview-promotion-projectroot-consistency
+      interview_content_hash: 857f83012079af57b73cd2e91ec4c7c90320290bb34226d39be77c3e67f17fab
+  - schema_version: "1.0"
     id: CONSTRAINT-0001
     type: CONSTRAINT
     title: "Discipline is opt-in, not ambient: enabled defaults to false and a normal chat triggers nothing"
@@ -103,10 +133,11 @@ records:
     id: DEC-0004
     type: DEC
     title: Interviews promoveren na afronding uitsluitend onderbouwde voorstellen met spec-gebonden handoff
-    status: proposed
+    status: superseded
     owner: Chris Engelhard
     change_authority: owner
     supersedes: []
+    status_reason: "Vervangen na expliciete toestemming van Chris: het oude voorstel om met waarschuwing door te gaan botst met de in het afgeronde workflow-interview gekozen ratificatiegrens voor afhankelijk werk."
     links: []
     alternatives_rejected:
       - alternative: Spec pas afronden nadat registratie slaagt
@@ -118,3 +149,26 @@ records:
     decision: Maak een expliciete post-completion registratie met voorgestelde records uit onderbouwde, getypeerde kandidaten en een handoff uitsluitend voor /implement en agents die aan die spec werken. Meld onvolledigheid of fouten zichtbaar en laat implementatie met waarschuwing doorgaan.
     consequences: Registratie krijgt een afzonderlijk resultaat met herbruikbare IDs en herstelpad; het project moet een werkende koppeling tussen interview-host en decision-layer bewijzen. Ambigue inhoud blijft needs-review en bestaande records blijven onaangeroerd.
     context: "Interview 2026-10-16: voltooiing van de markdown spec mag niet worden verward met geslaagde registratie. De gebruiker koos registratie ná afronding, een niet-blokkerende /implement-handoff, expliciete initialisatie bij ontbrekend register en geen automatische supersede bij gewijzigde specs."
+  - schema_version: "1.0"
+    id: DEC-0005
+    type: DEC
+    title: Interviewafronding registreert voorstellen, maar onbesliste bepalende keuzes blokkeren afhankelijk werk
+    status: accepted
+    owner: Chris Engelhard
+    change_authority: owner
+    supersedes:
+      - DEC-0004
+    links:
+      - type: external
+        target: interview/analyseer-eerst-opnieuw-hoe-mijn-workflow-als-so-3cb4c2d5-ad42-471b-8ca0-f1e93b5d8e0f.md
+        rationale: Afgeronde interviewbron met REQ-008, REQ-010, AC-011 en AC-012.
+    alternatives_rejected:
+      - alternative: Laat al het werk ondanks een open bepalende keuze met waarschuwing doorgaan
+        rejected_because: Dat omzeilt de door Chris gekozen ratificatiegrens voor afhankelijk werk.
+      - alternative: Blokkeer alle implementatie zolang enig record proposed is
+        rejected_because: Niet-bepalende voorstellen mogen zichtbaar open blijven en onafhankelijk werk niet tegenhouden.
+      - alternative: Ratify de keuze of initialiseer een ontbrekend register automatisch
+        rejected_because: Beide vragen expliciete eigenaarstoestemming en kunnen niet uit interviewtekst worden afgeleid.
+    decision: Na bevestigde interviewafronding promoveert de optionele koppeling uitsluitend expliciete, onderbouwde kandidaten als proposed en meldt resultaat, lacunes en herstelpad. De spec mag afgerond blijven als registratie review vereist. /implement start nooit automatisch. Afhankelijk werk aan structurele grenzen, data- of interfacecontracten of moeilijk omkeerbare keuzes begint pas nadat Chris de bepalende keuze via het register heeft geratificeerd; onafhankelijk werk mag doorgaan. Bij ontbrekend register wordt eerst toestemming voor initialisatie gevraagd. Dit is agentbeleid, geen universeel afgedwongen host-gate.
+    consequences: Een mislukte registratie verbergt de voltooide spec niet, maar kan afhankelijke implementatie blokkeren totdat de bepalende keuze accepted is. Overige proposed records blokkeren werk niet automatisch. De agent legt open gates en concrete vervolgstappen met kosten en aanbeveling uit; ratify/reject en /implement vereisen afzonderlijke eigenaarshandelingen.
+    context: Chris koos in de afgeronde workflowspec interview/analyseer-eerst-opnieuw-hoe-mijn-workflow-als-so-3cb4c2d5-ad42-471b-8ca0-f1e93b5d8e0f.md voor registratie na een expliciet interview, afzonderlijke start van /implement en ratificatie vóór code die van een bepalende architectuurkeuze afhangt. DEC-0004 liet implementatie met waarschuwing doorgaan, ook wanneer juist die keuze nog openstaat; die uitzondering wordt hiermee vervangen.

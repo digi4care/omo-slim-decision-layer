@@ -58,6 +58,13 @@ carried by the skill and by a short reminder in the system prompt — the
 reminder is fixed text, never register contents, because injecting changing bytes
 on every request would invalidate the provider prompt cache. The register is
 fetched on demand through `decision-list`.
+For enabled projects with a register, the reminder also asks the agent to
+recommend concrete next actions when a scoped result leaves the larger task
+unfinished. This is prompt guidance, not enforced host behavior; it does not
+start `/implement`, change records, or apply where the reminder is disabled.
+The same guidance asks agents to pause only code dependent on an unaccepted
+determining architecture decision, while independent work may continue. It
+cannot detect such decisions or enforce that pause for every execution path.
 
 | Tool | Purpose |
 |---|---|
@@ -88,7 +95,10 @@ discipline, and — on v2 — the self-registered skill.
 ```jsonc
 // in your OpenCode config
 {
-  "decision-layer": { "enabled": true }
+  "decision-layer": {
+    "enabled": true,
+    "requireBeadsForDelegation": true
+  }
 }
 ```
 
@@ -96,15 +106,21 @@ Two sources, merged **per key**, not per file:
 
 | Source | Keys it contributes |
 |---|---|
-| `<project>/opencode.json(c)` | all three |
+| `<project>/opencode.json(c)` | all four |
 | `~/.config/opencode/opencode.jsonc` | `enabled`, `log` |
-| `<project>/.opencode/decision-layer.json` (deprecated) | all three |
+| `<project>/.opencode/decision-layer.json` (deprecated) | all four |
 
 | Key | Meaning | Scope |
 |---|---|---|
 | `enabled` | turns the guidance on | **user** — safe to set globally |
 | `log` | append one line per session to `.decisions/activation.log` | **user** — a debugging aid, off by default; gitignore the log |
 | `registerPath` | where the register lives | **repository** — never read from the global file, or one path would apply to every repo on the machine |
+| `requireBeadsForDelegation` | require a project `.beads/` directory before known delegation tool calls | **repository** — project-only, defaults to `false` |
+
+Set both `enabled` and `requireBeadsForDelegation` in a project's config to opt
+in; reload OpenCode after enabling. This checks known `task` (v1) and `subagent`
+(v2) tool calls only. It is not a universal gate for OMO commands, multi-round
+delegation, or architecture decisions.
 
 Because precedence is per key, a project file that sets only `registerPath`
 does not erase an `enabled` you set globally.

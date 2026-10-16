@@ -49,6 +49,21 @@ The register at `.decisions/register.yaml` is the single source of truth for
     promotion; records are proposed, never ratified by promotion.
 7. **Work stays in beads.** Records never carry work status. Link to beads
    issues by id, never duplicate lifecycle state.
+8. **Hand off with choices.** When a scoped result is ready but the user's
+   broader objective is still open, state what is established and what remains.
+   Offer two or three concrete next actions, their costs or trade-offs, and one
+   recommendation. Continue already-authorized work without asking again.
+   Ask only for a new permission or decision that actually blocks progress;
+   never turn a settled choice into another question. This is agent guidance,
+   not a technical guarantee or an instruction to create records.
+9. **Pause only dependent architecture work.** Before coding a structural
+   boundary, data/interface contract, or hard-to-reverse choice, check source
+   and register. If the determining decision is missing or merely proposed,
+   pause only code that depends on it, explain concrete choices and costs, and
+   ask the owner to decide and ratify through the decision tools. Continue
+   independent work; other proposed records do not block by default. If the
+   register is missing, ask before initializing it. This is an agent stop,
+   not a universal technical gate.
 
 ## Reference
 
